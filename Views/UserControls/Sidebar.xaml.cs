@@ -24,6 +24,11 @@ namespace gentech_services.Views.UserControls
         {
             InitializeComponent();
         }
+
+        private void IconButton_Loaded_1(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 
 }
