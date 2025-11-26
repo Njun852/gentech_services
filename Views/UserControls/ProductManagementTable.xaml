@@ -4,8 +4,15 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:gentech_services.Views.UserControls"
+             xmlns:conv="clr-namespace:gentech_services.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <conv:StatusToCancelVisibilityConverter x:Key="StatusToCancelVisibilityConverter"/>
+        <conv:StatusToSetOngoingVisibilityConverter x:Key="StatusToSetOngoingVisibilityConverter"/>
+        <conv:StatusToSetCompletedVisibilityConverter x:Key="StatusToSetCompletedVisibilityConverter"/>
+        <conv:StatusToEditVisibilityConverter x:Key="StatusToEditVisibilityConverter"/>
+    </UserControl.Resources>
     <Border CornerRadius="14" Background="White" ClipToBounds="True">
         <Grid>
             <Grid.RowDefinitions>
@@ -37,20 +44,20 @@
 
                 <TextBlock Grid.Column="0" Text="ID" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="1" Text="NAME" TextWrapping="Wrap" 
-            TextAlignment="Center" VerticalAlignment="Center" />
+                    TextAlignment="Center" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2" Text="CATEGORY" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="3" Text="PRICE" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="4" Text="STOCK QUANTITY" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                <TextBlock Grid.Column="4" Text="STOCK" VerticalAlignment="Center"  TextAlignment="Center"/>
                 <TextBlock Grid.Column="5" Text="SKU" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="6" Text="STATUS" VerticalAlignment="Center"/>
                 <TextBlock Grid.Column="7" Text="ACTION" VerticalAlignment="Center"/>
             </Grid>
             <Border Grid.Row="1" CornerRadius="0,0,14,14" ClipToBounds="True">
-                <ScrollViewer>
+                <ScrollViewer Style="{StaticResource CustomScrollViewer}">
                     <ItemsControl
-ItemsSource="{Binding ServiceOrders}"
-d:ItemsSource="{d:SampleData ItemCount=5}"
-AlternationCount="2">
+                            ItemsSource="{Binding ServiceOrders}"
+                            d:ItemsSource="{d:SampleData ItemCount=5}"
+                            AlternationCount="2">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Style="{StaticResource AlternatingRow}" Padding="4">
@@ -74,22 +81,22 @@ AlternationCount="2">
                                         </Grid.Resources>
 
                                         <TextBlock Grid.Column="0" Text="P001" 
-                 VerticalAlignment="Center" FontWeight="Bold"/>
+                                                    VerticalAlignment="Center" FontWeight="Bold"/>
                                         <TextBlock Grid.Column="1" Text="Lenovo Legion 3"
-                 TextWrapping="Wrap" FontWeight="Bold"
-                 TextAlignment="Center" VerticalAlignment="Center"/>
+                                                    TextWrapping="Wrap" FontWeight="Bold"
+                                                    TextAlignment="Center" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="2" Text="Laptop" 
-                 VerticalAlignment="Center" FontWeight="Bold"/>
+                                                    VerticalAlignment="Center" FontWeight="Bold"/>
                                         <TextBlock Grid.Column="3" Text="₱ 5,999" 
-                 VerticalAlignment="Center" FontWeight="Bold"/>
+                                                    VerticalAlignment="Center" FontWeight="Bold"/>
                                         <TextBlock Grid.Column="4" Text="300" 
-                 VerticalAlignment="Center"/>
+                                                    VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="5" Text="83M00051PH" 
-                 VerticalAlignment="Center"/>
+                                                    VerticalAlignment="Center"/>
                                         <Border Grid.Column="6" VerticalAlignment="Center"
-HorizontalAlignment="Center"
-Padding="8,4,8,4"
-Background="#190000FF" CornerRadius="12">
+                                                HorizontalAlignment="Center"
+                                                Padding="8,4,8,4"
+                                                Background="#190000FF" CornerRadius="12">
                                             <TextBlock>
                                                 <TextBlock.Text>Inactive</TextBlock.Text>
                                                 <TextBlock.Style>
@@ -106,8 +113,53 @@ Background="#190000FF" CornerRadius="12">
                                                 </TextBlock.Style>
                                             </TextBlock>
                                         </Border>
-                                        <Button Grid.Row="7" Style="{StaticResource KebabMenuButton}" 
-                  Grid.Column="7" Background="White" BorderThickness="1"/>
+                          
+                                        <Button Grid.Row="7" Style="{StaticResource KebabMenuButton}"
+                                                 Grid.Column="7"
+                                                 Background="White"
+                                                 BorderThickness="1"
+                                                 Click="KebabMenu_Click"
+                                                 Tag="{Binding}">
+                                            <Button.ContextMenu>
+                                                <ContextMenu HasDropShadow="True" Width="200">
+                                                    <ContextMenu.Template>
+                                                        <ControlTemplate TargetType="ContextMenu">
+                                                            <Border Background="White"
+                                                                    BorderBrush="#E0E0E0"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4"
+                                                                    Padding="8">
+                                                                <StackPanel>
+                                                                    <Border Background="Transparent" Padding="12,8" CornerRadius="4" Margin="2"
+                                                                            MouseEnter="MenuItem_MouseEnter" MouseLeave="MenuItem_MouseLeave">
+                                                                        <TextBlock Text="View" FontSize="14" Cursor="Hand"
+                                                                                    MouseLeftButtonDown="ViewMenuItem_Click"/>
+                                                                    </Border>
+                                                                    <Border Background="Transparent" Padding="12,8" CornerRadius="4" Margin="2"
+                                                                            MouseEnter="MenuItem_MouseEnter" MouseLeave="MenuItem_MouseLeave"
+                                                                            Visibility="{Binding Tag.Status, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource StatusToEditVisibilityConverter}}">
+                                                                        <TextBlock Text="Edit" FontSize="14" Cursor="Hand"
+                                                                                   MouseLeftButtonDown="EditMenuItem_Click"/>
+                                                                    </Border>
+                                                                    <Button Content="Set to Ongoing"
+                                                                            Style="{StaticResource OutlineButton}"
+                                                                            Background="#FFA500"
+                                                                            Foreground="White"
+                                                                            FontWeight="SemiBold"
+                                                                            BorderThickness="0"
+                                                                            Height="32"
+                                                                            Margin="4,4,4,2"
+                                                                            Click="SetOngoingMenuItem_Click"
+                                                                            Tag="6"
+                                                                            Visibility="{Binding Tag.Status, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource StatusToSetOngoingVisibilityConverter}}"/>
+                                                                    
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </ContextMenu.Template>
+                                                </ContextMenu>
+                                            </Button.ContextMenu>
+                                        </Button>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

@@ -32,15 +32,24 @@
                         <userControl:Searchbar Grid.Column="0" Loaded="Searchbar_Loaded"/>
                         <ComboBox Grid.Column="2" Style="{StaticResource OutlineComboBox}" Width="160" Margin="0,0,8,0"   Tag="All Categories" Height="30"/>
                     </Grid>
-                    <ScrollViewer Margin=" 0,10,0,0"  Grid.Row="1" Grid.ColumnSpan="3">
-                        <WrapPanel Orientation="Horizontal"  >
-                            <userControl:Card TextName="AMD Ryzen 5 5600" TextCategory="Processor" TextPrice="8950" TextStock="4"/>
-                            <userControl:Card TextName="AMD Ryzen 5 5600" TextCategory="Processor" TextPrice="8950" TextStock="4"/>
-                            <userControl:Card TextName="AMD Ryzen 5 5600" TextCategory="Processor" TextPrice="8950" TextStock="4"/>
-                            <userControl:Card TextName="AMD Ryzen 5 5600" TextCategory="Processor" TextPrice="8950" TextStock="4"/>
-                            <userControl:Card TextName="AMD Ryzen 5 5600" TextCategory="Processor" TextPrice="8950" TextStock="4"/>
+                    <ScrollViewer Margin=" 0,10,0,0"  Grid.Row="1" Grid.ColumnSpan="3" Style="{StaticResource CustomScrollViewer}">
+                        <ItemsControl
+                                        ItemsSource="{Binding ServiceOrders, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        d:ItemsSource="{d:SampleData ItemCount=5}"
+                                        AlternationCount="2">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <userControl:Card TextName="AMD Ryzen 5 5600" TextCategory="Processor" TextPrice="8950" TextStock="4"/>
 
-                        </WrapPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
                     </ScrollViewer>
                 </Grid>
 
