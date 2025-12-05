@@ -66,9 +66,19 @@ namespace gentech_services.Views.UserControls
             NavigationRequested?.Invoke(this, "InventoryManagement");
         }
 
+        private void InventoryLog_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "InventoryLog");
+        }
+
         private void ProductOrders_Click(object sender, RoutedEventArgs e)
         {
             NavigationRequested?.Invoke(this, "ProductOrders");
+        }
+
+        private void ProductOrderHistory_Click(object sender, RoutedEventArgs e)
+        {
+            NavigationRequested?.Invoke(this, "ProductOrderHistory");
         }
 
         private void Users_Click(object sender, RoutedEventArgs e)

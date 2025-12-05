@@ -7,7 +7,7 @@
              mc:Ignorable="d"
              d:DesignHeight="150" d:DesignWidth="200">
     <Border Background="White"
-            BorderBrush="#E0E0E0"
+            BorderBrush="Black"
             BorderThickness="1"
             CornerRadius="8"
             Padding="8"
@@ -23,7 +23,7 @@
             <Button x:Name="EditButton"
                     Content="Edit"
                     Background="White"
-                    BorderBrush="#E0E0E0"
+                    BorderBrush="Black"
                     BorderThickness="0"
                     Height="35"
                     FontSize="13"
@@ -48,47 +48,7 @@
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
                                             <Setter TargetName="border" Property="Background" Value="#F5F5F5"/>
-                                            <Setter TargetName="border" Property="BorderBrush" Value="#E0E0E0"/>
-                                            <Setter TargetName="border" Property="BorderThickness" Value="1"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </Button.Style>
-            </Button>
-
-            <!-- Deactivate/Activate Button -->
-            <Button x:Name="ToggleActiveButton"
-                    Content="Deactivate"
-                    Background="#F5F5F5"
-                    BorderBrush="#E0E0E0"
-                    BorderThickness="0"
-                    Height="35"
-                    FontSize="13"
-                    HorizontalContentAlignment="Center"
-                    Padding="12,0"
-                    Margin="0,0,0,4"
-                    Click="ToggleActiveButton_Click">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="border"
-                                            Background="{TemplateBinding Background}"
-                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                            CornerRadius="6"
-                                            Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                          VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="border" Property="Background" Value="#E8E8E8"/>
-                                            <Setter TargetName="border" Property="BorderBrush" Value="#E0E0E0"/>
+                                            <Setter TargetName="border" Property="BorderBrush" Value="Black"/>
                                             <Setter TargetName="border" Property="BorderThickness" Value="1"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>

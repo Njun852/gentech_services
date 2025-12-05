@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using gentech_services.ViewsModels;
 
 namespace gentech_services.Views.Pages
@@ -45,6 +46,44 @@ namespace gentech_services.Views.Pages
             if (product != null)
             {
                 ViewModel.EditProductCommand.Execute(product);
+            }
+        }
+
+        private void EditStockDetails_Click(object sender, RoutedEventArgs e)
+        {
+            ProductActionPopup.IsOpen = false;
+            var product = ProductActionPopup.Tag as ProductViewModel;
+            if (product != null)
+            {
+                ViewModel.EditProductCommand.Execute(product);
+            }
+        }
+
+        private void ModalOverlay_Click(object sender, MouseButtonEventArgs e)
+        {
+            // Close the modal when clicking on the overlay
+            ViewModel.CancelAddCommand.Execute(null);
+        }
+
+        private void EditModalOverlay_Click(object sender, MouseButtonEventArgs e)
+        {
+            // Close the edit modal when clicking on the overlay
+            ViewModel.CloseEditModalCommand?.Execute(null);
+        }
+
+        private void EditModalContent_Click(object sender, MouseButtonEventArgs e)
+        {
+            // Prevent click from bubbling to overlay
+            e.Handled = true;
+        }
+
+        private void DeleteProduct_Click(object sender, RoutedEventArgs e)
+        {
+            ProductActionPopup.IsOpen = false;
+            var product = ProductActionPopup.Tag as ProductViewModel;
+            if (product != null)
+            {
+                ViewModel.DeleteProductCommand.Execute(product);
             }
         }
     }

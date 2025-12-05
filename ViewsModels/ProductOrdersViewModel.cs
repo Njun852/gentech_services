@@ -17,8 +17,13 @@ namespace gentech_services.ViewsModels
         private string searchText;
         private string selectedCategoryFilter;
         private string customerName;
+        private string customerEmail;
+        private string customerPhone;
         private decimal totalAmount;
         private bool isCartEmpty;
+        private string nameError;
+        private string emailError;
+        private string phoneError;
 
         public ObservableCollection<ProductCardViewModel> FilteredProducts
         {
@@ -69,7 +74,62 @@ namespace gentech_services.ViewsModels
             {
                 customerName = value;
                 OnPropertyChanged(nameof(CustomerName));
+                ValidateName();
                 ProcessPaymentCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public string CustomerEmail
+        {
+            get { return customerEmail; }
+            set
+            {
+                customerEmail = value;
+                OnPropertyChanged(nameof(CustomerEmail));
+                ValidateEmail();
+                ProcessPaymentCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public string CustomerPhone
+        {
+            get { return customerPhone; }
+            set
+            {
+                customerPhone = value;
+                OnPropertyChanged(nameof(CustomerPhone));
+                ValidatePhone();
+                ProcessPaymentCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public string NameError
+        {
+            get { return nameError; }
+            set
+            {
+                nameError = value;
+                OnPropertyChanged(nameof(NameError));
+            }
+        }
+
+        public string EmailError
+        {
+            get { return emailError; }
+            set
+            {
+                emailError = value;
+                OnPropertyChanged(nameof(EmailError));
+            }
+        }
+
+        public string PhoneError
+        {
+            get { return phoneError; }
+            set
+            {
+                phoneError = value;
+                OnPropertyChanged(nameof(PhoneError));
             }
         }
 
@@ -96,15 +156,19 @@ namespace gentech_services.ViewsModels
         // Commands
         public RelayCommand AddToCartCommand { get; private set; }
         public RelayCommand RemoveFromCartCommand { get; private set; }
+        public RelayCommand IncreaseQuantityCommand { get; private set; }
+        public RelayCommand DecreaseQuantityCommand { get; private set; }
         public RelayCommand ProcessPaymentCommand { get; private set; }
-        public RelayCommand CancelOrderCommand { get; private set; }
+        public RelayCommand ClearCartCommand { get; private set; }
 
         public ProductOrdersViewModel()
         {
             AddToCartCommand = new RelayCommand(obj => AddToCart(obj as ProductCardViewModel));
             RemoveFromCartCommand = new RelayCommand(obj => RemoveFromCart(obj as CartItemViewModel));
+            IncreaseQuantityCommand = new RelayCommand(obj => IncreaseQuantity(obj as CartItemViewModel));
+            DecreaseQuantityCommand = new RelayCommand(obj => DecreaseQuantity(obj as CartItemViewModel));
             ProcessPaymentCommand = new RelayCommand(obj => ProcessPayment(), obj => CanProcessPayment());
-            CancelOrderCommand = new RelayCommand(obj => CancelOrder());
+            ClearCartCommand = new RelayCommand(obj => ClearCart());
 
             cartItems = new ObservableCollection<CartItemViewModel>();
             cartItemCounter = 0;
@@ -327,6 +391,33 @@ namespace gentech_services.ViewsModels
             }
         }
 
+        private void IncreaseQuantity(CartItemViewModel item)
+        {
+            if (item != null)
+            {
+                item.Quantity++;
+                item.Subtotal = item.Quantity * item.UnitPrice;
+                UpdateTotal();
+            }
+        }
+
+        private void DecreaseQuantity(CartItemViewModel item)
+        {
+            if (item != null)
+            {
+                if (item.Quantity > 1)
+                {
+                    item.Quantity--;
+                    item.Subtotal = item.Quantity * item.UnitPrice;
+                    UpdateTotal();
+                }
+                else
+                {
+                    RemoveFromCart(item);
+                }
+            }
+        }
+
         private void UpdateTotal()
         {
             TotalAmount = cartItems.Sum(item => item.Subtotal);
@@ -334,7 +425,67 @@ namespace gentech_services.ViewsModels
 
         private bool CanProcessPayment()
         {
-            return cartItems.Count > 0 && !string.IsNullOrWhiteSpace(customerName);
+            return cartItems.Count > 0 &&
+                   !string.IsNullOrWhiteSpace(customerName) &&
+                   !string.IsNullOrWhiteSpace(customerEmail) &&
+                   !string.IsNullOrWhiteSpace(customerPhone) &&
+                   string.IsNullOrEmpty(nameError) &&
+                   string.IsNullOrEmpty(emailError) &&
+                   string.IsNullOrEmpty(phoneError);
+        }
+
+        private void ValidateName()
+        {
+            if (string.IsNullOrWhiteSpace(customerName))
+            {
+                NameError = "Name is required";
+            }
+            else if (customerName.Length < 2)
+            {
+                NameError = "Name must be at least 2 characters";
+            }
+            else
+            {
+                NameError = string.Empty;
+            }
+        }
+
+        private void ValidateEmail()
+        {
+            if (string.IsNullOrWhiteSpace(customerEmail))
+            {
+                EmailError = "Email is required";
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerEmail,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                EmailError = "Invalid email format";
+            }
+            else
+            {
+                EmailError = string.Empty;
+            }
+        }
+
+        private void ValidatePhone()
+        {
+            if (string.IsNullOrWhiteSpace(customerPhone))
+            {
+                PhoneError = "Phone number is required";
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerPhone,
+                @"^[\d\s\-\(\)\+]+$"))
+            {
+                PhoneError = "Invalid phone number format";
+            }
+            else if (customerPhone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "").Replace("+", "").Length < 10)
+            {
+                PhoneError = "Phone number must be at least 10 digits";
+            }
+            else
+            {
+                PhoneError = string.Empty;
+            }
         }
 
         private void ProcessPayment()
@@ -386,6 +537,8 @@ namespace gentech_services.ViewsModels
         {
             cartItems.Clear();
             CustomerName = string.Empty;
+            CustomerEmail = string.Empty;
+            CustomerPhone = string.Empty;
             cartItemCounter = 0;
             UpdateTotal();
             IsCartEmpty = true;

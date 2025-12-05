@@ -13,45 +13,53 @@
     </UserControl.Resources>
     <Grid>
         <!-- Main Content -->
-        <Grid Margin="20">
+        <Grid Margin="32,24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header with Title and Search -->
-        <Grid Grid.Row="0" Margin="0,0,0,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- Header with Gray Background -->
+        <Border Grid.Row="0" Background="#EFEFEF" Padding="16" CornerRadius="8" Margin="0,0,0,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <TextBlock Grid.Column="0" Text="Service Management"
-                       FontSize="28" FontWeight="SemiBold"
-                       VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="0" Text="Service Management"
+                           FontSize="28" FontWeight="Bold"
+                           VerticalAlignment="Center"/>
 
-            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                <TextBox x:Name="SearchTextBox"
-                         Style="{StaticResource OutlineTextBox}"
-                         Tag="Search Service"
-                         Width="200"
-                         Height="35"
-                         FontSize="14"
-                         Margin="0,0,12,0"
-                         TextChanged="SearchTextBox_TextChanged"/>
-                <Button Content="New Service"
-                        Style="{StaticResource OutlineButton}"
+                <Border Grid.Column="1"
+                        Background="White"
+                        BorderBrush="Black"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <TextBox x:Name="SearchTextBox"
+                             Style="{StaticResource OutlineTextBox}"
+                             Tag="Search Service"
+                             Width="200"
+                             Height="38"
+                             FontSize="13"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             VerticalContentAlignment="Center"
+                             TextChanged="SearchTextBox_TextChanged"/>
+                </Border>
+
+                <Button Grid.Column="3"
+                        Content="New Service"
+                        Style="{StaticResource PrimaryButton}"
                         Background="#0000FF"
-                        Foreground="White"
-                        FontWeight="SemiBold"
-                        Height="35"
                         Width="120"
-                        Tag="4"
+                        Height="40"
                         Click="NewService_Click"/>
-            </StackPanel>
-        </Grid>
+            </Grid>
+        </Border>
 
         <!-- Services Table -->
         <Border Grid.Row="1" CornerRadius="8" BorderBrush="Black"
@@ -63,14 +71,13 @@
                 </Grid.RowDefinitions>
 
                 <!-- Table Header -->
-                <Border Grid.Row="0" Background="#F5F5F5" CornerRadius="8,8,0,0">
+                <Border Grid.Row="0" Background="White" CornerRadius="8,8,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="1.5*"/>
-                        <ColumnDefinition Width="1.2*"/>
                         <ColumnDefinition Width="0.8*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.Resources>
@@ -86,8 +93,7 @@
                     <TextBlock Grid.Column="1" Text="CATEGORY"/>
                     <TextBlock Grid.Column="2" Text="PRICE"/>
                     <TextBlock Grid.Column="3" Text="UPDATED"/>
-                    <TextBlock Grid.Column="4" Text="STATUS"/>
-                    <TextBlock Grid.Column="5" Text="ACTION"/>
+                    <TextBlock Grid.Column="4" Text="ACTION"/>
                 </Grid>
                 </Border>
 
@@ -100,14 +106,16 @@
                                       AlternationCount="2">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Style="{StaticResource AlternatingRow}" Padding="8">
+                                    <Border Style="{StaticResource AlternatingRow}"
+                                            CornerRadius="5"
+                                            Padding="16,12"
+                                            Margin="4,2">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="2*"/>
                                                 <ColumnDefinition Width="1.5*"/>
                                                 <ColumnDefinition Width="1.5*"/>
                                                 <ColumnDefinition Width="1.5*"/>
-                                                <ColumnDefinition Width="1.2*"/>
                                                 <ColumnDefinition Width="0.8*"/>
                                             </Grid.ColumnDefinitions>
                                             <Grid.Resources>
@@ -123,22 +131,8 @@
                                             <TextBlock Grid.Column="2" Text="{Binding Price, StringFormat='₱ {0:N2}'}"/>
                                             <TextBlock Grid.Column="3" Text="{Binding UpdatedAt, StringFormat='MM/dd/yyyy'}"/>
 
-                                            <!-- Status Badge -->
-                                            <Border Grid.Column="4"
-                                                    Background="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}, ConverterParameter=Background}"
-                                                    CornerRadius="12"
-                                                    Padding="12,4"
-                                                    HorizontalAlignment="Left"
-                                                    Margin="16,0,0,0">
-                                                <TextBlock Text="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}, ConverterParameter=Text}"
-                                                           Foreground="{Binding IsActive, Converter={StaticResource BoolToStatusConverter}, ConverterParameter=Foreground}"
-                                                           FontSize="12"
-                                                           FontWeight="SemiBold"
-                                                           Margin="0"/>
-                                            </Border>
-
                                             <!-- Action Button -->
-                                            <Button Grid.Column="5"
+                                            <Button Grid.Column="4"
                                                     Style="{StaticResource KebabMenuButton}"
                                                     Background="White"
                                                     BorderThickness="1"
@@ -155,135 +149,108 @@
         </Border>
 
         <!-- Categories Section -->
-        <Border Grid.Row="2" CornerRadius="8" BorderBrush="Black"
-                BorderThickness="1" Padding="16">
+        <Border Grid.Row="2" Padding="0" ClipToBounds="True">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Categories Table -->
                 <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
                     <!-- Categories Header -->
-                    <Grid Grid.Row="0">
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"/>
                             <ColumnDefinition Width="2*"/>
                             <ColumnDefinition Width="1.5*"/>
                             <ColumnDefinition Width="2*"/>
                         </Grid.ColumnDefinitions>
-                        <Grid.Resources>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="FontWeight" Value="SemiBold"/>
-                                <Setter Property="FontSize" Value="12"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                                <Setter Property="Margin" Value="8,0,0,0"/>
-                            </Style>
-                        </Grid.Resources>
 
-                        <TextBlock Grid.Column="0" Text="CATEGORY ID"/>
-                        <TextBlock Grid.Column="1" Text="NAME"/>
-                        <TextBlock Grid.Column="2" Text="SERVICES COUNT"/>
-                        <TextBlock Grid.Column="3" Text="ACTION"/>
+                        <TextBlock Grid.Column="0" Text="Category ID" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
+                        <TextBlock Grid.Column="1" Text="Name" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
+                        <TextBlock Grid.Column="2" Text="Services Count" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
+                        <TextBlock Grid.Column="3" Text="Action" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
                     </Grid>
 
                     <!-- Categories Content -->
-                    <Border Grid.Row="1" Height="200" BorderBrush="Black"
-                            BorderThickness="0,1,0,0" ClipToBounds="True">
-                        <ScrollViewer Style="{StaticResource CustomScrollViewer}"
-                                      VerticalScrollBarVisibility="Auto"
-                                      Margin="0,8,0,0">
-                            <ItemsControl x:Name="CategoriesItemsControl"
-                                          AlternationCount="2">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Style="{StaticResource AlternatingRow}"
-                                                Padding="8">
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="1*"/>
-                                                    <ColumnDefinition Width="2*"/>
-                                                    <ColumnDefinition Width="1.5*"/>
-                                                    <ColumnDefinition Width="2*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <Grid.Resources>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="FontSize" Value="13"/>
-                                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                                        <Setter Property="Margin" Value="8,0,0,0"/>
-                                                    </Style>
-                                                </Grid.Resources>
+                    <ScrollViewer Grid.Row="1"
+                                  Style="{StaticResource CustomScrollViewer}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  MaxHeight="200">
+                        <ItemsControl x:Name="CategoriesItemsControl"
+                                      AlternationCount="2">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource AlternatingRow}"
+                                            CornerRadius="5"
+                                            Padding="16,12"
+                                            Margin="0,2">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="1*"/>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="1.5*"/>
+                                                <ColumnDefinition Width="2*"/>
+                                            </Grid.ColumnDefinitions>
 
-                                                <TextBlock Grid.Column="0" Text="{Binding CategoryID}" FontWeight="SemiBold"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding ServicesCount}"/>
+                                            <TextBlock Grid.Column="0" Text="{Binding CategoryID}" FontSize="13" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding ServicesCount}" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center"/>
 
-                                                <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="8,0,0,0">
-                                                    <Button Content="Rename"
-                                                            Style="{StaticResource OutlineButton}"
-                                                            Background="White"
-                                                            Height="28"
-                                                            Width="80"
-                                                            FontSize="11"
-                                                            Margin="0,0,8,0"
-                                                            Tag="4"
-                                                            Click="RenameCategory_Click"/>
-                                                    <Button Content="Delete"
-                                                            Style="{StaticResource OutlineButton}"
-                                                            Background="#FF0000"
-                                                            Foreground="White"
-                                                            Height="28"
-                                                            Width="80"
-                                                            FontSize="11"
-                                                            Tag="4"
-                                                            Click="DeleteCategory_Click"/>
-                                                </StackPanel>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                    </Border>
+                                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                                <Button Content="Rename"
+                                                        Style="{StaticResource OutlineButton}"
+                                                        Background="White"
+                                                        Height="28"
+                                                        Width="70"
+                                                        FontSize="11"
+                                                        Margin="0,0,8,0"
+                                                        Tag="4"
+                                                        Click="RenameCategory_Click"/>
+                                                <Button Content="Delete"
+                                                        Style="{StaticResource OutlineButton}"
+                                                        Background="#FF0000"
+                                                        Foreground="White"
+                                                        Height="28"
+                                                        Width="70"
+                                                        FontSize="11"
+                                                        Tag="4"
+                                                        Click="DeleteCategory_Click"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Grid>
 
                 <!-- Add Category Section -->
-                <Border Grid.Column="1" BorderBrush="Black"
-                        BorderThickness="1,0,0,0" Padding="16"
-                        Width="300">
-                    <StackPanel VerticalAlignment="Top">
-                        <TextBlock Text="Add New Category"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,20"/>
+                <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Top" Width="180">
+                    <TextBox x:Name="NewCategoryTextBox"
+                             Style="{StaticResource OutlineTextBox}"
+                             Tag="New Category"
+                             Height="38"
+                             FontSize="13"
+                             VerticalContentAlignment="Center"
+                             Margin="0,0,0,8"/>
 
-                        <TextBlock Text="Category Name"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Margin="0,0,0,8"/>
-                        <TextBox x:Name="NewCategoryTextBox"
-                                 Style="{StaticResource OutlineTextBox}"
-                                 Tag="Enter category name"
-                                 Height="35"
-                                 FontSize="13"
-                                 Margin="0,0,0,16"/>
-
-                        <Button Content="Add Category"
-                                Style="{StaticResource OutlineButton}"
-                                Background="#00FF00"
-                                Foreground="White"
-                                FontWeight="SemiBold"
-                                Height="35"
-                                Tag="4"
-                                Click="AddCategory_Click"/>
-                    </StackPanel>
-                </Border>
+                    <Button Content="Add Category"
+                            Style="{StaticResource PrimaryButton}"
+                            Background="#00C206"
+                            Foreground="Black"
+                            FontWeight="SemiBold"
+                            Height="38"
+                            FontSize="12"
+                            Click="AddCategory_Click"/>
+                </StackPanel>
             </Grid>
         </Border>
         </Grid>

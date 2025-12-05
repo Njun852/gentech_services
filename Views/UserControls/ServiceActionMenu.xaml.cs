@@ -9,7 +9,6 @@ namespace gentech_services.Views.UserControls
     public partial class ServiceActionMenu : UserControl
     {
         public event EventHandler<Service> OnEdit;
-        public event EventHandler<Service> OnToggleActive;
         public event EventHandler<Service> OnDelete;
 
         private Service currentService;
@@ -22,25 +21,11 @@ namespace gentech_services.Views.UserControls
         public void SetService(Service service)
         {
             currentService = service;
-
-            // Update toggle button text based on service status
-            if (service != null)
-            {
-                ToggleActiveButton.Content = service.IsActive ? "Deactivate" : "Activate";
-            }
         }
 
         private void EditButton_Click(object sender, RoutedEventArgs e)
         {
             OnEdit?.Invoke(this, currentService);
-        }
-
-        private void ToggleActiveButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (currentService != null)
-            {
-                OnToggleActive?.Invoke(this, currentService);
-            }
         }
 
         private void DeleteButton_Click(object sender, RoutedEventArgs e)

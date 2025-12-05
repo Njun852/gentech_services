@@ -69,26 +69,8 @@
                           DisplayMemberPath="Name"
                           Margin="0,0,0,12"/>
 
-                <!-- Active Checkbox -->
-                <CheckBox x:Name="ServiceActiveCheckBox"
-                          Content="Active"
-                          FontSize="12"
-                          IsChecked="True"
-                          Margin="0,0,0,16"/>
-
                 <!-- Buttons -->
-                <StackPanel Orientation="Horizontal"
-                            HorizontalAlignment="Right">
-                    <Button Content="Clear"
-                            x:Name="ClearButton"
-                            Width="80"
-                            Height="32"
-                            Background="White"
-                            BorderBrush="#E0E0E0"
-                            BorderThickness="1"
-                            FontSize="12"
-                            Margin="0,0,8,0"
-                            Click="ClearButton_Click"/>
+                <StackPanel Orientation="Horizontal">
                     <Button Content="Save"
                             x:Name="SaveButton"
                             Width="80"
@@ -98,7 +80,17 @@
                             BorderThickness="0"
                             FontSize="12"
                             FontWeight="SemiBold"
+                            Margin="0,0,8,0"
                             Click="SaveButton_Click"/>
+                    <Button Content="Clear"
+                            x:Name="ClearButton"
+                            Width="80"
+                            Height="32"
+                            Background="White"
+                            BorderBrush="#E0E0E0"
+                            BorderThickness="1"
+                            FontSize="12"
+                            Click="ClearButton_Click"/>
                 </StackPanel>
             </StackPanel>
         </Grid>

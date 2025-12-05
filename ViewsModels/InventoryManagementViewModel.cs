@@ -47,6 +47,20 @@ namespace gentech_services.ViewsModels
         private bool isAddModalVisible;
         private bool isEditModalVisible;
         private bool isViewModalVisible;
+        private bool isStockInModalVisible;
+        private bool isStockOutModalVisible;
+
+        // Stock In Modal Properties
+        private string stockInProductName;
+        private int? stockInQuantity;
+        private string stockInReason;
+        private int stockInCurrentStock;
+
+        // Stock Out Modal Properties
+        private string stockOutProductName;
+        private int? stockOutQuantity;
+        private string stockOutReason;
+        private int stockOutCurrentStock;
 
         public ObservableCollection<ProductViewModel> Products
         {
@@ -322,6 +336,108 @@ namespace gentech_services.ViewsModels
             }
         }
 
+        public bool IsStockInModalVisible
+        {
+            get { return isStockInModalVisible; }
+            set
+            {
+                isStockInModalVisible = value;
+                OnPropertyChanged(nameof(IsStockInModalVisible));
+            }
+        }
+
+        public string StockInProductName
+        {
+            get { return stockInProductName; }
+            set
+            {
+                stockInProductName = value;
+                OnPropertyChanged(nameof(StockInProductName));
+            }
+        }
+
+        public int? StockInQuantity
+        {
+            get { return stockInQuantity; }
+            set
+            {
+                stockInQuantity = value;
+                OnPropertyChanged(nameof(StockInQuantity));
+                AddStockCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public string StockInReason
+        {
+            get { return stockInReason; }
+            set
+            {
+                stockInReason = value;
+                OnPropertyChanged(nameof(StockInReason));
+            }
+        }
+
+        public int StockInCurrentStock
+        {
+            get { return stockInCurrentStock; }
+            set
+            {
+                stockInCurrentStock = value;
+                OnPropertyChanged(nameof(StockInCurrentStock));
+            }
+        }
+
+        public bool IsStockOutModalVisible
+        {
+            get { return isStockOutModalVisible; }
+            set
+            {
+                isStockOutModalVisible = value;
+                OnPropertyChanged(nameof(IsStockOutModalVisible));
+            }
+        }
+
+        public string StockOutProductName
+        {
+            get { return stockOutProductName; }
+            set
+            {
+                stockOutProductName = value;
+                OnPropertyChanged(nameof(StockOutProductName));
+            }
+        }
+
+        public int? StockOutQuantity
+        {
+            get { return stockOutQuantity; }
+            set
+            {
+                stockOutQuantity = value;
+                OnPropertyChanged(nameof(StockOutQuantity));
+                RemoveStockCommand.RaiseCanExecuteChanged();
+            }
+        }
+
+        public string StockOutReason
+        {
+            get { return stockOutReason; }
+            set
+            {
+                stockOutReason = value;
+                OnPropertyChanged(nameof(StockOutReason));
+            }
+        }
+
+        public int StockOutCurrentStock
+        {
+            get { return stockOutCurrentStock; }
+            set
+            {
+                stockOutCurrentStock = value;
+                OnPropertyChanged(nameof(StockOutCurrentStock));
+            }
+        }
+
         // Commands
         public RelayCommand NewProductCommand { get; private set; }
         public RelayCommand AddProductCommand { get; private set; }
@@ -329,8 +445,16 @@ namespace gentech_services.ViewsModels
         public RelayCommand EditProductCommand { get; private set; }
         public RelayCommand SaveEditCommand { get; private set; }
         public RelayCommand ClearEditCommand { get; private set; }
+        public RelayCommand CloseEditModalCommand { get; private set; }
         public RelayCommand ViewProductCommand { get; private set; }
         public RelayCommand CloseViewModalCommand { get; private set; }
+        public RelayCommand StockInCommand { get; private set; }
+        public RelayCommand StockOutCommand { get; private set; }
+        public RelayCommand AddStockCommand { get; private set; }
+        public RelayCommand CancelStockInCommand { get; private set; }
+        public RelayCommand RemoveStockCommand { get; private set; }
+        public RelayCommand CancelStockOutCommand { get; private set; }
+        public RelayCommand DeleteProductCommand { get; private set; }
 
         public InventoryManagementViewModel()
         {
@@ -340,8 +464,16 @@ namespace gentech_services.ViewsModels
             EditProductCommand = new RelayCommand(obj => OpenEditModal(obj as ProductViewModel));
             SaveEditCommand = new RelayCommand(obj => SaveEdit(), obj => CanSaveEdit());
             ClearEditCommand = new RelayCommand(obj => ClearEditForm());
+            CloseEditModalCommand = new RelayCommand(obj => CloseEditModal());
             ViewProductCommand = new RelayCommand(obj => OpenViewModal(obj as ProductViewModel));
             CloseViewModalCommand = new RelayCommand(obj => CloseViewModal());
+            StockInCommand = new RelayCommand(obj => OpenStockInModal());
+            StockOutCommand = new RelayCommand(obj => OpenStockOutModal());
+            AddStockCommand = new RelayCommand(obj => AddStock(), obj => CanAddStock());
+            CancelStockInCommand = new RelayCommand(obj => CloseStockInModal());
+            RemoveStockCommand = new RelayCommand(obj => RemoveStock(), obj => CanRemoveStock());
+            CancelStockOutCommand = new RelayCommand(obj => CloseStockOutModal());
+            DeleteProductCommand = new RelayCommand(obj => DeleteProduct(obj as ProductViewModel));
 
             LoadSampleData();
             UpdateLowStockAlert();
@@ -589,8 +721,7 @@ namespace gentech_services.ViewsModels
             return !string.IsNullOrWhiteSpace(ProductName) &&
                    !string.IsNullOrWhiteSpace(SKU) &&
                    !string.IsNullOrWhiteSpace(SelectedCategory) &&
-                   Price.HasValue && Price.Value > 0 &&
-                   StockQuantity.HasValue && StockQuantity.Value >= 0;
+                   Price.HasValue && Price.Value > 0;
         }
 
         private void AddProduct()
@@ -604,7 +735,7 @@ namespace gentech_services.ViewsModels
                 SKU = SKU.Trim(),
                 CategoryName = SelectedCategory,
                 Price = Price.Value,
-                StockQuanity = StockQuantity.Value,
+                StockQuanity = 0, // Default stock quantity
                 IsActive = true,
                 Description = Description?.Trim() ?? string.Empty,
                 CreatedAt = DateTime.Now
@@ -694,6 +825,142 @@ namespace gentech_services.ViewsModels
         private void CloseViewModal()
         {
             IsViewModalVisible = false;
+        }
+
+        private void CloseEditModal()
+        {
+            IsEditModalVisible = false;
+        }
+
+        private void OpenStockInModal()
+        {
+            if (SelectedProduct == null) return;
+
+            // Use the edited name if available, otherwise use the product's current name
+            StockInProductName = !string.IsNullOrWhiteSpace(EditProductName) ? EditProductName : SelectedProduct.Name;
+            StockInCurrentStock = SelectedProduct.StockQuanity;
+            StockInQuantity = null;
+            StockInReason = string.Empty;
+            IsStockInModalVisible = true;
+        }
+
+        private void CloseStockInModal()
+        {
+            IsStockInModalVisible = false;
+            StockInProductName = string.Empty;
+            StockInQuantity = null;
+            StockInReason = string.Empty;
+        }
+
+        private bool CanAddStock()
+        {
+            return StockInQuantity.HasValue && StockInQuantity.Value > 0;
+        }
+
+        private void AddStock()
+        {
+            if (SelectedProduct == null || !StockInQuantity.HasValue) return;
+
+            SelectedProduct.StockQuanity += StockInQuantity.Value;
+
+            // Update the EditStockQuantity to reflect the new stock level
+            EditStockQuantity = SelectedProduct.StockQuanity;
+
+            // Refresh the Products collection to trigger UI update
+            var temp = Products;
+            Products = null;
+            Products = temp;
+
+            UpdateLowStockAlert();
+
+            MessageBox.Show($"Added {StockInQuantity.Value} units to '{SelectedProduct.Name}'. New stock: {SelectedProduct.StockQuanity}",
+                "Stock Added", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            CloseStockInModal();
+        }
+
+        private void OpenStockOutModal()
+        {
+            if (SelectedProduct == null) return;
+
+            // Use the edited name if available, otherwise use the product's current name
+            StockOutProductName = !string.IsNullOrWhiteSpace(EditProductName) ? EditProductName : SelectedProduct.Name;
+            StockOutCurrentStock = SelectedProduct.StockQuanity;
+            StockOutQuantity = null;
+            StockOutReason = string.Empty;
+            IsStockOutModalVisible = true;
+        }
+
+        private void CloseStockOutModal()
+        {
+            IsStockOutModalVisible = false;
+            StockOutProductName = string.Empty;
+            StockOutQuantity = null;
+            StockOutReason = string.Empty;
+        }
+
+        private bool CanRemoveStock()
+        {
+            return StockOutQuantity.HasValue && StockOutQuantity.Value > 0;
+        }
+
+        private void RemoveStock()
+        {
+            if (SelectedProduct == null || !StockOutQuantity.HasValue) return;
+
+            // Check if there's enough stock to remove
+            if (SelectedProduct.StockQuanity < StockOutQuantity.Value)
+            {
+                MessageBox.Show($"Cannot remove {StockOutQuantity.Value} units. Only {SelectedProduct.StockQuanity} units available.",
+                    "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            SelectedProduct.StockQuanity -= StockOutQuantity.Value;
+
+            // Update the EditStockQuantity to reflect the new stock level
+            EditStockQuantity = SelectedProduct.StockQuanity;
+
+            // Refresh the Products collection to trigger UI update
+            var temp = Products;
+            Products = null;
+            Products = temp;
+
+            UpdateLowStockAlert();
+
+            MessageBox.Show($"Removed {StockOutQuantity.Value} units from '{SelectedProduct.Name}'. New stock: {SelectedProduct.StockQuanity}",
+                "Stock Removed", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            CloseStockOutModal();
+        }
+
+        private void DeleteProduct(ProductViewModel product)
+        {
+            if (product == null) return;
+
+            // Check if product has stock
+            if (product.StockQuanity > 0)
+            {
+                MessageBox.Show($"Cannot delete '{product.Name}'. Product has {product.StockQuanity} units in stock.\nPlease remove all stock before deleting.",
+                    "Cannot Delete Product", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Confirm deletion
+            var result = MessageBox.Show($"Are you sure you want to delete '{product.Name}'?\nThis action cannot be undone.",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                // Remove from both collections
+                allProducts.Remove(product);
+                Products.Remove(product);
+
+                MessageBox.Show($"Product '{product.Name}' has been deleted successfully.",
+                    "Product Deleted", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                UpdateLowStockAlert();
+            }
         }
     }
 

@@ -1,0 +1,926 @@
+<UserControl x:Class="gentech_services.Views.Pages.ProductOrderHistoryPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:gentech_services.Views.Pages"
+             mc:Ignorable="d"
+             d:DesignHeight="900" d:DesignWidth="1400" Background="White">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid Margin="32,24">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="24"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+        <!-- Header with Gray Background -->
+        <Border Grid.Row="0" Background="#EFEFEF" Padding="16" CornerRadius="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="Product Order History"
+                           FontSize="28"
+                           FontWeight="Bold"
+                           Foreground="#1E1E1E"
+                           VerticalAlignment="Center"/>
+
+                <!-- Search -->
+                <Border Grid.Column="1"
+                        Background="White"
+                        BorderBrush="Black"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <TextBox Style="{StaticResource OutlineTextBox}"
+                             Tag="Search by Order Number"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Width="280"
+                             Height="38"
+                             FontSize="13"
+                             BorderThickness="0"
+                             Background="Transparent"
+                             VerticalContentAlignment="Center"/>
+                </Border>
+
+                <!-- Payment Status Filter -->
+                <Border Grid.Column="3"
+                        Background="White"
+                        BorderBrush="Black"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                    <ComboBox Style="{StaticResource OutlineComboBox}"
+                              SelectedValue="{Binding SelectedPaymentStatus}"
+                              SelectedValuePath="Content"
+                              Width="180"
+                              Height="38"
+                              FontSize="13"
+                              BorderThickness="0"
+                              Background="Transparent">
+                        <ComboBoxItem Content="Payment Status" IsSelected="True"/>
+                        <ComboBoxItem Content="Paid"/>
+                        <ComboBoxItem Content="Pending"/>
+                        <ComboBoxItem Content="Cancelled"/>
+                    </ComboBox>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Table Container -->
+        <Border Grid.Row="2"
+                Background="White"
+                BorderBrush="Black"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="0"
+                ClipToBounds="True">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Table Header -->
+                <Border Grid.Row="0"
+                        Background="White"
+                        BorderThickness="0"
+                        CornerRadius="8,8,0,0"
+                        Padding="24,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="120"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="80"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" Text="ORDER NO." FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                        <TextBlock Grid.Column="1" Text="CUSTOMER" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                        <TextBlock Grid.Column="2" Text="DATE" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                        <TextBlock Grid.Column="3" Text="TOTAL ITEMS" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                        <TextBlock Grid.Column="4" Text="TOTAL COST" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                        <TextBlock Grid.Column="5" Text="PAYMENT STATUS" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                        <TextBlock Grid.Column="6" Text="ACTION" FontWeight="Bold" FontSize="13" Foreground="#333" TextAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Table Content -->
+                <Border Grid.Row="1" CornerRadius="0,0,8,8" ClipToBounds="True">
+                <ScrollViewer Style="{StaticResource CustomScrollViewer}"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              MaxHeight="600">
+                    <ItemsControl ItemsSource="{Binding FilteredOrders}" Padding="0" AlternationCount="2">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource AlternatingRow}"
+                                        CornerRadius="5"
+                                        Padding="24,16"
+                                        Margin="4,2">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="120"/>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="80"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Order Number -->
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding OrderNumber}"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#333"/>
+
+                                        <!-- Customer -->
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding CustomerName}"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#333"
+                                                   FontWeight="SemiBold"/>
+
+                                        <!-- Date -->
+                                        <TextBlock Grid.Column="2"
+                                                   Text="{Binding OrderDate, StringFormat='MM/dd/yyyy'}"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#666"/>
+
+                                        <!-- Total Items -->
+                                        <TextBlock Grid.Column="3"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#333">
+                                            <Run Text="{Binding TotalItems}"/>
+                                            <Run Text=" items"/>
+                                        </TextBlock>
+
+                                        <!-- Total Cost -->
+                                        <TextBlock Grid.Column="4"
+                                                   Text="{Binding TotalCost, StringFormat='₱ {0:N2}'}"
+                                                   FontSize="14"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="#333"/>
+
+                                        <!-- Payment Status -->
+                                        <Border Grid.Column="5"
+                                                CornerRadius="4"
+                                                Padding="8,4"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding PaymentStatus}" Value="Paid">
+                                                            <Setter Property="Background" Value="#E8F5E9"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding PaymentStatus}" Value="Pending">
+                                                            <Setter Property="Background" Value="#FFF3E0"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding PaymentStatus}" Value="Cancelled">
+                                                            <Setter Property="Background" Value="#FFEBEE"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontSize="12"
+                                                       FontWeight="SemiBold"
+                                                       Text="{Binding PaymentStatus}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Paid">
+                                                                <Setter Property="Foreground" Value="#2E7D32"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Pending">
+                                                                <Setter Property="Foreground" Value="#F57C00"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Cancelled">
+                                                                <Setter Property="Foreground" Value="#C62828"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+
+                                        <!-- Action Button -->
+                                        <Button Grid.Column="6"
+                                                Style="{StaticResource KebabMenuButton}"
+                                                Background="White"
+                                                BorderBrush="Black"
+                                                BorderThickness="1"
+                                                Width="32"
+                                                Height="32"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Click="OrderActionButton_Click">
+                                            <Button.Resources>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="CornerRadius" Value="5"/>
+                                                </Style>
+                                            </Button.Resources>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                </Border>
+            </Grid>
+        </Border>
+        </Grid>
+
+        <!-- Action Menu Popup -->
+        <Popup x:Name="OrderActionPopup"
+           StaysOpen="False"
+           AllowsTransparency="True"
+           Placement="Left"
+           HorizontalOffset="0"
+           VerticalOffset="35">
+        <Border Background="White"
+                BorderBrush="Black"
+                BorderThickness="1"
+                CornerRadius="5"
+                Padding="8">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Opacity="0.15" BlurRadius="10" ShadowDepth="2"/>
+            </Border.Effect>
+            <StackPanel Width="200">
+                <!-- View Button -->
+                <Button Height="40"
+                        Background="#EEEEEE"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Margin="0,0,0,8"
+                        Click="ViewOrder_Click">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                x:Name="Border"
+                                                BorderThickness="0"
+                                                CornerRadius="5"
+                                                Padding="12,8">
+                                            <TextBlock Text="View"
+                                                       Foreground="Black"
+                                                       FontSize="14"
+                                                       FontWeight="SemiBold"
+                                                       HorizontalAlignment="Left"
+                                                       VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="#DDDDDD"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Return Button -->
+                <Button Height="40"
+                        Background="#0000FF"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Margin="0,0,0,8"
+                        Click="ReturnOrder_Click">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                x:Name="Border"
+                                                BorderThickness="0"
+                                                CornerRadius="5"
+                                                Padding="12,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Flip-Left Icon -->
+                                                <Viewbox Grid.Column="0" Width="20" Height="20" Margin="0,0,12,0">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M19 7v4H5.83l3.58-3.59L8 6l-6 6 6 6 1.41-1.41L5.83 13H21V7h-2z" Fill="White"/>
+                                                    </Canvas>
+                                                </Viewbox>
+
+                                                <TextBlock Grid.Column="1"
+                                                           Text="Return"
+                                                           Foreground="White"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="#0000CC"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Void Button -->
+                <Button Height="40"
+                        Background="#FF0000"
+                        BorderThickness="0"
+                        Cursor="Hand">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="5"/>
+                        </Style>
+                    </Button.Resources>
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="{TemplateBinding Background}"
+                                                x:Name="Border"
+                                                BorderThickness="0"
+                                                CornerRadius="5"
+                                                Padding="12,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Void Icon (Circle with line) -->
+                                                <Viewbox Grid.Column="0" Width="20" Height="20" Margin="0,0,12,0">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" Fill="White"/>
+                                                        <Path Data="M7 11h10v2H7z" Fill="White"/>
+                                                    </Canvas>
+                                                </Viewbox>
+
+                                                <TextBlock Grid.Column="1"
+                                                           Text="Void"
+                                                           Foreground="White"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="#CC0000"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </StackPanel>
+        </Border>
+        </Popup>
+
+        <!-- Order Details Modal -->
+        <Grid Background="#80000000"
+              Visibility="{Binding IsOrderDetailsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Margin="-32,-24">
+            <Border Background="White"
+                    BorderBrush="Black"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Width="900"
+                    MaxHeight="600"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Modal Header -->
+                    <Grid Grid.Row="0">
+                        <TextBlock Text="Order Details"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#1E1E1E"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="✕"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Width="28"
+                                Height="28"
+                                FontSize="18"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Foreground="#666"
+                                Cursor="Hand"
+                                Click="CloseOrderDetails_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        CornerRadius="14">
+                                                    <TextBlock Text="{TemplateBinding Content}"
+                                                               FontSize="{TemplateBinding FontSize}"
+                                                               Foreground="{TemplateBinding Foreground}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F0F0F0"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+
+                    <!-- Order Details Table -->
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Table Header -->
+                        <Border Grid.Row="0"
+                                Background="#F5F5F5"
+                                Padding="16,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="80"/>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="1.5*"/>
+                                    <ColumnDefinition Width="1*"/>
+                                    <ColumnDefinition Width="1.2*"/>
+                                    <ColumnDefinition Width="1.2*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="Product" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Grid.Column="1" Text="Name" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Grid.Column="2" Text="SKU" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Grid.Column="3" Text="Quantity" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Grid.Column="4" Text="Unit Price" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Grid.Column="5" Text="Subtotal" FontWeight="Bold" FontSize="13"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Table Rows -->
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      MaxHeight="300">
+                            <ItemsControl ItemsSource="{Binding OrderDetailsItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="16,12"
+                                                Background="#F5F5F5">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="1.2*"/>
+                                                    <ColumnDefinition Width="1.2*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0" Text="{Binding ProductId}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding SKU}" FontSize="14" VerticalAlignment="Center" Foreground="#666"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Quantity}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="4" Text="{Binding UnitPrice, StringFormat='₱ {0:N0}'}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="5" Text="{Binding Subtotal, StringFormat='₱ {0:N0}'}" FontSize="14" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Total -->
+                    <TextBlock Grid.Row="4"
+                               HorizontalAlignment="Left"
+                               FontSize="16"
+                               FontWeight="Bold">
+                        <Run Text="Total:"/>
+                        <Run Text="{Binding OrderDetailsTotal, StringFormat='₱ {0:N0}'}"/>
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Process Return Modal -->
+        <Grid Background="#80000000"
+              Visibility="{Binding IsReturnModalVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Margin="-32,-24">
+            <Border Background="White"
+                    BorderBrush="Black"
+                    BorderThickness="1"
+                    CornerRadius="12"
+                    Width="550"
+                    MaxHeight="600"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Padding="24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="16"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="20"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="16"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Modal Header -->
+                    <Grid Grid.Row="0">
+                        <TextBlock Text="Process Return"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#1E1E1E"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="✕"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top"
+                                Width="28"
+                                Height="28"
+                                FontSize="18"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Foreground="#666"
+                                Cursor="Hand"
+                                Click="CloseReturnModal_Click">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        CornerRadius="14">
+                                                    <TextBlock Text="{TemplateBinding Content}"
+                                                               FontSize="{TemplateBinding FontSize}"
+                                                               Foreground="{TemplateBinding Foreground}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#F0F0F0"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+
+                    <!-- Order Number and Date -->
+                    <TextBlock Grid.Row="2"
+                               FontSize="13"
+                               Foreground="#666">
+                        <Run Text="#PO-001" FontWeight="SemiBold"/>
+                        <Run Text=" 02-05-2025, 9:00:00 PM"/>
+                    </TextBlock>
+
+                    <!-- Instruction Text -->
+                    <TextBlock Grid.Row="4"
+                               Text="Select items and quantities to return"
+                               FontSize="13"
+                               Foreground="#666"
+                               VerticalAlignment="Top"/>
+
+                    <!-- Return Items List -->
+                    <ScrollViewer Grid.Row="4"
+                                  Style="{StaticResource CustomScrollViewer}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  MaxHeight="250"
+                                  Margin="0,30,0,0">
+                        <ItemsControl ItemsSource="{Binding ReturnItems}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="White"
+                                            BorderBrush="Black"
+                                            BorderThickness="1"
+                                            CornerRadius="8"
+                                            Padding="16"
+                                            Margin="0,0,0,12">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="8"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="12"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Product Name and Price -->
+                                            <Grid Grid.Row="0">
+                                                <TextBlock Text="{Binding ProductName}"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock HorizontalAlignment="Right"
+                                                           FontSize="14"
+                                                           FontWeight="SemiBold">
+                                                    <Run Text="₱"/>
+                                                    <Run Text="{Binding UnitPrice, StringFormat='{}{0:N0}'}"/>
+                                                </TextBlock>
+                                            </Grid>
+
+                                            <!-- Original Quantity -->
+                                            <TextBlock Grid.Row="2"
+                                                       FontSize="12"
+                                                       Foreground="#666">
+                                                <Run Text="Original:"/>
+                                                <Run Text="{Binding OriginalQuantity}"/>
+                                                <Run Text=" × ₱"/>
+                                                <Run Text="{Binding UnitPrice, StringFormat='{}{0:N0}'}"/>
+                                            </TextBlock>
+
+                                            <!-- Return Quantity Controls -->
+                                            <StackPanel Grid.Row="4" Orientation="Horizontal">
+                                                <TextBlock Text="Return quantity:"
+                                                           FontSize="13"
+                                                           Foreground="#666"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,12,0"/>
+
+                                                <!-- Decrease Button -->
+                                                <Button Width="32"
+                                                        Height="32"
+                                                        Background="#E5E5E5"
+                                                        BorderBrush="#808080"
+                                                        BorderThickness="1"
+                                                        Cursor="Hand"
+                                                        Command="{Binding DataContext.DecreaseReturnQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Button.Resources>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="CornerRadius" Value="6"/>
+                                                        </Style>
+                                                    </Button.Resources>
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="6"
+                                                                                Padding="8">
+                                                                            <Image Source="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/minus.png"
+                                                                                   Width="16"
+                                                                                   Height="16"
+                                                                                   Stretch="Uniform"
+                                                                                   HorizontalAlignment="Center"
+                                                                                   VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <!-- Quantity Display -->
+                                                <Border Width="50"
+                                                        Height="32"
+                                                        Background="White"
+                                                        Margin="8,0">
+                                                    <TextBlock Text="{Binding ReturnQuantity}"
+                                                               FontSize="14"
+                                                               FontWeight="SemiBold"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <!-- Increase Button -->
+                                                <Button Width="32"
+                                                        Height="32"
+                                                        Background="#E5E5E5"
+                                                        BorderBrush="#808080"
+                                                        BorderThickness="1"
+                                                        Cursor="Hand"
+                                                        Command="{Binding DataContext.IncreaseReturnQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Button.Resources>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="CornerRadius" Value="6"/>
+                                                        </Style>
+                                                    </Button.Resources>
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="{TemplateBinding Background}"
+                                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                                                CornerRadius="6">
+                                                                            <TextBlock Text="+"
+                                                                                       FontSize="16"
+                                                                                       FontWeight="Bold"
+                                                                                       Foreground="Black"
+                                                                                       HorizontalAlignment="Center"
+                                                                                       VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+
+                                                <!-- "of X" text -->
+                                                <TextBlock Margin="8,0,0,0"
+                                                           FontSize="13"
+                                                           Foreground="#666"
+                                                           VerticalAlignment="Center">
+                                                    <Run Text="of"/>
+                                                    <Run Text="{Binding OriginalQuantity}"/>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <!-- Total Refund -->
+                    <Border Grid.Row="6"
+                            Background="#E3F2FD"
+                            CornerRadius="8"
+                            Padding="16,12">
+                        <Grid>
+                            <TextBlock Text="Total Refund:"
+                                       FontSize="14"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock HorizontalAlignment="Right"
+                                       FontSize="14"
+                                       FontWeight="SemiBold">
+                                <Run Text="₱"/>
+                                <Run Text="{Binding TotalRefund, StringFormat='{}{0:N0}'}"/>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <!-- Action Buttons -->
+                    <Grid Grid.Row="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Cancel Button -->
+                        <Button Grid.Column="0"
+                                Content="Cancel"
+                                Height="40"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Background="White"
+                                Foreground="Black"
+                                BorderBrush="Black"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                Click="CloseReturnModal_Click">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="8"/>
+                                </Style>
+                            </Button.Resources>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8"
+                                                        x:Name="Border">
+                                                    <TextBlock Text="{TemplateBinding Content}"
+                                                               FontSize="{TemplateBinding FontSize}"
+                                                               FontWeight="{TemplateBinding FontWeight}"
+                                                               Foreground="{TemplateBinding Foreground}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Border" Property="Background" Value="#F5F5F5"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Process Return Button -->
+                        <Button Grid.Column="2"
+                                Content="Process Return"
+                                Height="40"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Background="#0000FF"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                Command="{Binding ProcessReturnCommand}">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="8"/>
+                                </Style>
+                            </Button.Resources>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        CornerRadius="8"
+                                                        x:Name="Border">
+                                                    <TextBlock Text="{TemplateBinding Content}"
+                                                               FontSize="{TemplateBinding FontSize}"
+                                                               FontWeight="{TemplateBinding FontWeight}"
+                                                               Foreground="{TemplateBinding Foreground}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Border" Property="Background" Value="#0000CC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

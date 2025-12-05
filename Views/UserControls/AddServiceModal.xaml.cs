@@ -36,7 +36,6 @@ namespace gentech_services.Views.UserControls
             ServiceDescriptionTextBox.Text = string.Empty;
             ServicePriceTextBox.Text = string.Empty;
             ServiceCategoryComboBox.SelectedIndex = 0;
-            ServiceActiveCheckBox.IsChecked = true;
         }
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -85,7 +84,7 @@ namespace gentech_services.Views.UserControls
                 Price = price,
                 CategoryID = selectedCategory.CategoryID,
                 Category = selectedCategory,
-                IsActive = ServiceActiveCheckBox.IsChecked ?? true,
+                IsActive = true,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };

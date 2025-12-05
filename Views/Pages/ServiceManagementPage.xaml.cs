@@ -42,7 +42,6 @@ namespace gentech_services.Views.Pages
 
             // Wire up action menu events
             ServiceActionMenuControl.OnEdit += ServiceActionMenuControl_OnEdit;
-            ServiceActionMenuControl.OnToggleActive += ServiceActionMenuControl_OnToggleActive;
             ServiceActionMenuControl.OnDelete += ServiceActionMenuControl_OnDelete;
         }
 
@@ -420,22 +419,6 @@ namespace gentech_services.Views.Pages
 
             // Show edit modal
             EditModalOverlay.Visibility = Visibility.Visible;
-        }
-
-        private void ServiceActionMenuControl_OnToggleActive(object sender, Service service)
-        {
-            ServiceActionPopup.IsOpen = false;
-
-            // Toggle the IsActive status
-            service.IsActive = !service.IsActive;
-            service.UpdatedAt = DateTime.Now;
-
-            // Refresh the services table to show updated status
-            ServicesItemsControl.ItemsSource = null;
-            ServicesItemsControl.ItemsSource = Services;
-
-            string status = service.IsActive ? "activated" : "deactivated";
-            MessageBox.Show($"Service '{service.Name}' has been {status}.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void ServiceActionMenuControl_OnDelete(object sender, Service service)

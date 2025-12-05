@@ -38,7 +38,9 @@ namespace gentech_services
                 "ServiceManagement" => new ServiceManagementPage(),
                 "ServiceOrders" => new ServiceOrderPage(),
                 "InventoryManagement" => new InventoryManagementPage(),
+                "InventoryLog" => new InventoryLogPage(),
                 "ProductOrders" => new ProductOrdersPage(),
+                "ProductOrderHistory" => new ProductOrderHistoryPage(),
                 "UserManagement" => new UserManagementPage(),
                 _ => new ServiceManagementPage() // Default page
             };
