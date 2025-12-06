@@ -10,40 +10,35 @@
              d:DesignHeight="1050" d:DesignWidth="850" Background="White">
     <UserControl.Resources>
         <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <Style TargetType="TextBox"
                BasedOn="{StaticResource OutlineTextBox}">
-            <Setter Property="Height" Value="45"/>
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
         </Style>
         <Style TargetType="TextBlock" x:Key="ErrorTextBlock">
             <Setter Property="Foreground" Value="#FF0000"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="0,-6,0,8"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Margin" Value="0,-3,0,4"/>
         </Style>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <StackPanel Margin="12" MaxWidth="800">
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="350" Style="{StaticResource CustomScrollViewer}">
+            <StackPanel Margin="10">
             <TextBlock Text="Set Appointment" FontWeight="SemiBold"
-                       FontSize="28" Margin="0,0,0,12"/>
+                       FontSize="20" Margin="0,0,0,6"/>
 
-            <!-- First Name -->
-            <TextBox Tag="First Name"
-                     Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"/>
-            <TextBlock Text="{Binding FirstNameError}"
+            <!-- Customer Name -->
+            <TextBox Tag="Customer Name"
+                     Text="{Binding CustomerName, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock Text="{Binding CustomerNameError}"
                        Style="{StaticResource ErrorTextBlock}"
-                       Visibility="{Binding FirstNameError, Converter={StaticResource StringToVisibilityConverter}}"/>
-
-            <!-- Last Name -->
-            <TextBox Tag="Last Name"
-                     Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"/>
-            <TextBlock Text="{Binding LastNameError}"
-                       Style="{StaticResource ErrorTextBlock}"
-                       Visibility="{Binding LastNameError, Converter={StaticResource StringToVisibilityConverter}}"/>
+                       Visibility="{Binding CustomerNameError, Converter={StaticResource StringToVisibilityConverter}}"/>
 
             <!-- Email -->
             <TextBox Tag="Email"
@@ -59,59 +54,95 @@
                        Style="{StaticResource ErrorTextBlock}"
                        Visibility="{Binding PhoneError, Converter={StaticResource StringToVisibilityConverter}}"/>
 
-            <!-- Service Type -->
-            <ComboBox Style="{StaticResource OutlineComboBox}"
-                      Height="45"
-                      Tag="Service Type"
-                      FontSize="18" Margin="0,0,0,8"
-                      ItemsSource="{Binding AvailableServices}"
-                      SelectedItem="{Binding SelectedService, UpdateSourceTrigger=PropertyChanged}"
-                      DisplayMemberPath="Name"/>
-            <TextBlock Text="{Binding ServiceError}"
-                       Style="{StaticResource ErrorTextBlock}"
-                       Visibility="{Binding ServiceError, Converter={StaticResource StringToVisibilityConverter}}"/>
+            <!-- Services Selection -->
+            <Border x:Name="ServicesDropdownBorder"
+                    BorderBrush="Black" BorderThickness="1" CornerRadius="8" Height="32" Margin="0,0,0,5"
+                    Background="Transparent"
+                    MouseLeftButtonUp="ServicesDropdown_Click">
+                <Grid>
+                    <TextBlock x:Name="SelectedServicesText"
+                               Text="Select Services"
+                               FontSize="13"
+                               Foreground="#666"
+                               Padding="10,0,0,0"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False"/>
+                </Grid>
+            </Border>
+
+            <!-- Services Dropdown Popup -->
+            <Popup x:Name="ServicesPopup"
+                   StaysOpen="False"
+                   Width="400"
+                   AllowsTransparency="True"
+                   Closed="ServicesPopup_Closed">
+                <Border Background="White"
+                        BorderBrush="Black"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        MaxHeight="200">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding SelectableServices}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Name}"
+                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                              Margin="8,4"
+                                              FontSize="13"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
+            </Popup>
 
             <!-- Date -->
             <DatePicker Style="{StaticResource OutlineDatePicker}"
-                        FontSize="18" Margin="0,0,0,8" Height="45"
+                        FontSize="13" Margin="0,0,0,5" Height="32"
                         SelectedDate="{Binding SelectedDate, UpdateSourceTrigger=PropertyChanged}"/>
             <TextBlock Text="{Binding DateError}"
                        Style="{StaticResource ErrorTextBlock}"
                        Visibility="{Binding DateError, Converter={StaticResource StringToVisibilityConverter}}"/>
 
             <!-- Issue Description -->
-            <TextBox Tag="Issue Description" Height="100"
-                     Margin="0,0,0,12"
+            <TextBox Tag="Issue Description" Height="60"
+                     Margin="0,0,0,6"
                      Style="{StaticResource OutlineTextBoxMultiline}"
-                     FontSize="18"
+                     FontSize="13"
                      Text="{Binding IssueDescription, UpdateSourceTrigger=PropertyChanged}"/>
 
             <!-- Buttons -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                 <Button Content="Clear" Margin="0,0,8,0"
-                        Height="35" Background="White"
-                        Width="120"
+                        Height="32" Background="White"
+                        Width="100"
                         Style="{StaticResource OutlineButton}"
                         Tag="4"
                         Command="{Binding ClearFormCommand}"/>
                 <Button Content="Set Appointment"
-                        Width="200"
-                        Height="35"
+                        Width="150"
+                        Height="32"
                         Style="{StaticResource OutlineButton}"
                         Background="#0000FF" Foreground="White"
                         Tag="4"
                         Command="{Binding SetAppointmentCommand}"/>
             </StackPanel>
         </StackPanel>
-        <control:ServiceOrdersTable Grid.Row="1"
-                           MaxWidth="830"
-                           ServiceOrders="{Binding ServiceOrders}"
-                           ViewModel="{Binding}"/>
+        </ScrollViewer>
+        <Grid Grid.Row="1" Margin="0,12,0,0">
+            <control:ServiceOrdersTable HorizontalAlignment="Center"
+                                       Width="1200"
+                                       ServiceOrders="{Binding ServiceOrders}"
+                                       ViewModel="{Binding}"/>
+        </Grid>
 
         <!-- View Order Modal -->
         <control:ViewOrderModal x:Name="ViewOrderModal" Grid.RowSpan="2"/>
 
         <!-- Edit Order Modal -->
         <control:EditOrderModal x:Name="EditOrderModal" Grid.RowSpan="2"/>
+
+        <!-- Edit Appointment Modal -->
+        <control:EditAppointmentModal x:Name="EditAppointmentModal" Grid.RowSpan="2"/>
     </Grid>
 </UserControl>

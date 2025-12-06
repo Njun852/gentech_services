@@ -12,7 +12,7 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
-            <ColumnDefinition Width="341*"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <control:Sidebar/>
         <pages:ProductManagementPage Grid.Column="1" Margin="80,64"

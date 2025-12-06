@@ -23,26 +23,26 @@ namespace gentech_services.ViewsModels
         // Action to trigger modal display from View
         public Action<ServiceOrder> ShowViewOrderModal { get; set; }
         public Action<ServiceOrder, ObservableCollection<Service>, ObservableCollection<User>> ShowEditOrderModal { get; set; }
+        public Action<ServiceOrder> ShowEditAppointmentModal { get; set; }
 
-        // Form input properties
-        private string firstName;
-        private string lastName;
+        private string customerName;
         private string email;
         private string phone;
         private Service selectedService;
         private DateTime? selectedDate;
         private string issueDescription;
-        private ObservableCollection<Service> availableServices;
+        private ObservableCollection<SelectableService> selectableServices;
+        private ObservableCollection<OrderServiceItem> orderServices;
+        private ObservableCollection<Service> availableServicesToAdd;
+        private bool isServiceSelectorVisible;
+        private User selectedTechnician;
 
-        // Validation error properties
-        private string firstNameError;
-        private string lastNameError;
+        private string customerNameError;
         private string emailError;
         private string phoneError;
         private string serviceError;
         private string dateError;
 
-        // Filter properties
         private string selectedStatusFilter;
         private User selectedTechnicianFilter;
         private ObservableCollection<string> statusFilters;
@@ -62,16 +62,10 @@ namespace gentech_services.ViewsModels
             set { currentAppointment = value; OnPropertyChanged(); }
         }
 
-        public string FirstName
+        public string CustomerName
         {
-            get { return firstName; }
-            set { firstName = value; OnPropertyChanged(); }
-        }
-
-        public string LastName
-        {
-            get { return lastName; }
-            set { lastName = value; OnPropertyChanged(); }
+            get { return customerName; }
+            set { customerName = value; OnPropertyChanged(); }
         }
 
         public string Email
@@ -104,10 +98,28 @@ namespace gentech_services.ViewsModels
             set { issueDescription = value; OnPropertyChanged(); }
         }
 
-        public ObservableCollection<Service> AvailableServices
+        public ObservableCollection<SelectableService> SelectableServices
         {
-            get { return availableServices; }
-            set { availableServices = value; OnPropertyChanged(); }
+            get { return selectableServices; }
+            set { selectableServices = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<OrderServiceItem> OrderServices
+        {
+            get { return orderServices; }
+            set { orderServices = value; OnPropertyChanged(); }
+        }
+
+        public ObservableCollection<Service> AvailableServicesToAdd
+        {
+            get { return availableServicesToAdd; }
+            set { availableServicesToAdd = value; OnPropertyChanged(); }
+        }
+
+        public bool IsServiceSelectorVisible
+        {
+            get { return isServiceSelectorVisible; }
+            set { isServiceSelectorVisible = value; OnPropertyChanged(); }
         }
 
         public ObservableCollection<User> AvailableTechnicians
@@ -116,16 +128,16 @@ namespace gentech_services.ViewsModels
             set { availableTechnicians = value; OnPropertyChanged(); }
         }
 
-        public string FirstNameError
+        public User SelectedTechnician
         {
-            get { return firstNameError; }
-            set { firstNameError = value; OnPropertyChanged(); }
+            get { return selectedTechnician; }
+            set { selectedTechnician = value; OnPropertyChanged(); }
         }
 
-        public string LastNameError
+        public string CustomerNameError
         {
-            get { return lastNameError; }
-            set { lastNameError = value; OnPropertyChanged(); }
+            get { return customerNameError; }
+            set { customerNameError = value; OnPropertyChanged(); }
         }
 
         public string EmailError
@@ -183,6 +195,7 @@ namespace gentech_services.ViewsModels
 
         public RelayCommand ViewDetailsCommand { get; private set; }
         public RelayCommand EditCommand { get; private set; }
+        public RelayCommand EditAppointmentCommand { get; private set; }
         public RelayCommand SetToOngoingCommand { get; private set; }
         public RelayCommand SetToCompletedCommand { get; private set; }
         public RelayCommand CancelAppointmentCommand { get; private set; }
@@ -190,13 +203,18 @@ namespace gentech_services.ViewsModels
         public RelayCommand DeleteCommand { get; private set; }
         public RelayCommand SetAppointmentCommand { get; private set; }
         public RelayCommand ClearFormCommand { get; private set; }
+        public RelayCommand ShowServiceSelectorCommand { get; private set; }
+        public RelayCommand AddServiceToOrderCommand { get; private set; }
+        public RelayCommand RemoveServiceFromOrderCommand { get; private set; }
         public ServiceOrderViewModel()
         {
             currentAppointment = new Appointment();
             serviceOrders = new ObservableCollection<ServiceOrder>();
             allServiceOrders = new ObservableCollection<ServiceOrder>();
+            orderServices = new ObservableCollection<OrderServiceItem>();
+            availableServicesToAdd = new ObservableCollection<Service>();
+            selectableServices = new ObservableCollection<SelectableService>();
 
-            // Initialize filter collections
             statusFilters = new ObservableCollection<string>
             {
                 "All Statuses",
@@ -209,6 +227,7 @@ namespace gentech_services.ViewsModels
 
             ViewDetailsCommand = new RelayCommand(obj => ViewDetails(obj as ServiceOrder));
             EditCommand = new RelayCommand(obj => Edit(obj as ServiceOrder));
+            EditAppointmentCommand = new RelayCommand(obj => EditAppointment(obj as ServiceOrder));
             SetToOngoingCommand = new RelayCommand(obj => SetToOngoing(obj as ServiceOrder));
             SetToCompletedCommand = new RelayCommand(obj => SetToCompleted(obj as ServiceOrder));
             CancelAppointmentCommand = new RelayCommand(obj => CancelAppointment(obj as ServiceOrder));
@@ -216,6 +235,9 @@ namespace gentech_services.ViewsModels
             DeleteCommand = new RelayCommand(obj => Delete(obj as ServiceOrder));
             SetAppointmentCommand = new RelayCommand(obj => SetAppointment(), obj => CanSetAppointment());
             ClearFormCommand = new RelayCommand(obj => ClearForm());
+            ShowServiceSelectorCommand = new RelayCommand(obj => ShowServiceSelector());
+            AddServiceToOrderCommand = new RelayCommand(obj => AddServiceToOrder(obj as Service));
+            RemoveServiceFromOrderCommand = new RelayCommand(obj => RemoveServiceFromOrder(obj as OrderServiceItem));
 
             LoadData();
         }
@@ -233,7 +255,17 @@ namespace gentech_services.ViewsModels
             if (order != null)
             {
                 SelectedOrder = order;
-                ShowEditOrderModal?.Invoke(order, availableServices, availableTechnicians);
+                var services = new ObservableCollection<Service>(selectableServices.Select(s => s.Service));
+                ShowEditOrderModal?.Invoke(order, services, availableTechnicians);
+            }
+        }
+
+        private void EditAppointment(ServiceOrder order)
+        {
+            if (order != null)
+            {
+                SelectedOrder = order;
+                ShowEditAppointmentModal?.Invoke(order);
             }
         }
 
@@ -241,7 +273,6 @@ namespace gentech_services.ViewsModels
         {
             if (order != null)
             {
-                // Don't allow cancelling completed orders
                 if (order.Status == "Completed")
                 {
                     MessageBox.Show(
@@ -418,8 +449,7 @@ namespace gentech_services.ViewsModels
                     return;
                 }
 
-                // For now, show a simple date picker dialog using MessageBox
-                // In a real implementation, you'd want a custom dialog with a DatePicker
+
                 MessageBox.Show(
                     $"Reschedule feature coming soon.\n\n" +
                     $"Order ID: #S{order.SaleID:000}\n" +
@@ -461,19 +491,16 @@ namespace gentech_services.ViewsModels
         {
             IEnumerable<ServiceOrder> filteredOrders = allServiceOrders;
 
-            // Filter by status
             if (!string.IsNullOrEmpty(SelectedStatusFilter) && SelectedStatusFilter != "All Statuses")
             {
                 filteredOrders = filteredOrders.Where(o => o.Status == SelectedStatusFilter);
             }
 
-            // Filter by technician
             if (SelectedTechnicianFilter != null && SelectedTechnicianFilter.Name != "All Technicians")
             {
                 filteredOrders = filteredOrders.Where(o => o.Technician?.Name == SelectedTechnicianFilter.Name);
             }
 
-            // Update the visible collection
             serviceOrders.Clear();
             foreach (var order in filteredOrders)
             {
@@ -485,29 +512,18 @@ namespace gentech_services.ViewsModels
         {
             bool isValid = true;
 
-            // Clear previous errors
-            FirstNameError = string.Empty;
-            LastNameError = string.Empty;
+            CustomerNameError = string.Empty;
             EmailError = string.Empty;
             PhoneError = string.Empty;
             ServiceError = string.Empty;
             DateError = string.Empty;
 
-            // Validate First Name
-            if (string.IsNullOrWhiteSpace(FirstName))
+            if (string.IsNullOrWhiteSpace(CustomerName))
             {
-                FirstNameError = "First name is required";
+                CustomerNameError = "Customer name is required";
                 isValid = false;
             }
 
-            // Validate Last Name
-            if (string.IsNullOrWhiteSpace(LastName))
-            {
-                LastNameError = "Last name is required";
-                isValid = false;
-            }
-
-            // Validate Email
             if (string.IsNullOrWhiteSpace(Email))
             {
                 EmailError = "Email is required";
@@ -519,7 +535,6 @@ namespace gentech_services.ViewsModels
                 isValid = false;
             }
 
-            // Validate Phone
             if (string.IsNullOrWhiteSpace(Phone))
             {
                 PhoneError = "Phone number is required";
@@ -531,14 +546,12 @@ namespace gentech_services.ViewsModels
                 isValid = false;
             }
 
-            // Validate Service
-            if (SelectedService == null)
+            if (OrderServices.Count == 0)
             {
-                ServiceError = "Please select a service";
+                ServiceError = "Please add at least one service";
                 isValid = false;
             }
 
-            // Validate Date
             if (!SelectedDate.HasValue)
             {
                 DateError = "Date is required";
@@ -568,20 +581,17 @@ namespace gentech_services.ViewsModels
 
         private bool IsValidPhone(string phone)
         {
-            // Remove common formatting characters
             string cleaned = phone.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
 
-            // Check if it's all digits and has 10-11 digits (Philippine format)
             return cleaned.Length >= 10 && cleaned.Length <= 11 && cleaned.All(char.IsDigit);
         }
 
         private bool CanSetAppointment()
         {
-            return !string.IsNullOrWhiteSpace(FirstName) &&
-                   !string.IsNullOrWhiteSpace(LastName) &&
+            return !string.IsNullOrWhiteSpace(CustomerName) &&
                    !string.IsNullOrWhiteSpace(Email) &&
                    !string.IsNullOrWhiteSpace(Phone) &&
-                   SelectedService != null &&
+                   OrderServices.Count > 0 &&
                    SelectedDate.HasValue;
         }
 
@@ -592,18 +602,22 @@ namespace gentech_services.ViewsModels
                 return;
             }
 
-            // Create new customer
+            // Split customer name into first and last name
+            string[] nameParts = CustomerName.Trim().Split(new[] { ' ' }, 2);
+            string firstName = nameParts[0];
+            string lastName = nameParts.Length > 1 ? nameParts[1] : "";
+
             var customer = new Customer
             {
-                FirstName = FirstName,
-                LastName = LastName,
+                FirstName = firstName,
+                LastName = lastName,
                 Email = Email,
                 Phone = Phone,
                 CreatedAt = DateTime.Now
             };
 
-            // Create new service order
-            var serviceOrder = new ServiceOrder
+            // Create service orders for each service with single technician
+            foreach (var orderServiceItem in OrderServices)
             {
                 SaleID = serviceOrders.Count + 1, // Simple ID generation
                 Customer = customer,
@@ -613,14 +627,18 @@ namespace gentech_services.ViewsModels
                 Technician = new User { Name = "Unassigned" } // Default technician
             };
 
-            // Add to both collections
-            allServiceOrders.Add(serviceOrder);
-            serviceOrders.Add(serviceOrder);
+                allServiceOrders.Add(serviceOrder);
+                serviceOrders.Add(serviceOrder);
+            }
+
+            // Calculate total cost
+            decimal totalCost = OrderServices.Sum(os => os.Service.Price);
 
             // Show success message
             MessageBox.Show($"Appointment created successfully!\n\n" +
-                           $"Customer: {customer.FirstName} {customer.LastName}\n" +
-                           $"Service: {SelectedService.Name}\n" +
+                           $"Customer: {CustomerName}\n" +
+                           $"Services: {OrderServices.Count}\n" +
+                           $"Total Cost: ₱{totalCost:N2}\n" +
                            $"Date: {SelectedDate.Value:dd/MM/yyyy}",
                            "Success",
                            MessageBoxButton.OK,
@@ -630,19 +648,103 @@ namespace gentech_services.ViewsModels
             ClearForm();
         }
 
+        private void ShowServiceSelector()
+        {
+            UpdateAvailableServicesToAdd();
+            IsServiceSelectorVisible = true;
+        }
+
+        private void AddServiceToOrder(Service service)
+        {
+            if (service != null && !OrderServices.Any(os => os.Service.ServiceID == service.ServiceID))
+            {
+                var orderServiceItem = new OrderServiceItem
+                {
+                    Service = service,
+                    Technician = new User { Name = "Select Technician" },
+                    Status = "Pending"
+                };
+                OrderServices.Add(orderServiceItem);
+                UpdateAvailableServicesToAdd();
+                IsServiceSelectorVisible = false;
+            }
+        }
+
+        private void RemoveServiceFromOrder(OrderServiceItem orderServiceItem)
+        {
+            if (orderServiceItem != null)
+            {
+                OrderServices.Remove(orderServiceItem);
+                UpdateAvailableServicesToAdd();
+            }
+        }
+
+        private void UpdateAvailableServicesToAdd()
+        {
+            AvailableServicesToAdd.Clear();
+            foreach (var selectableService in selectableServices)
+            {
+                if (!OrderServices.Any(os => os.Service.ServiceID == selectableService.Service.ServiceID))
+                {
+                    AvailableServicesToAdd.Add(selectableService.Service);
+                }
+            }
+        }
+
+        private void SelectableService_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SelectableService.IsSelected))
+            {
+                var selectableService = sender as SelectableService;
+                if (selectableService != null)
+                {
+                    if (selectableService.IsSelected)
+                    {
+                        // Add to OrderServices if not already there
+                        if (!OrderServices.Any(os => os.Service.ServiceID == selectableService.Service.ServiceID))
+                        {
+                            var orderServiceItem = new OrderServiceItem
+                            {
+                                Service = selectableService.Service,
+                                Status = "Pending"
+                            };
+                            OrderServices.Add(orderServiceItem);
+                        }
+                    }
+                    else
+                    {
+                        // Remove from OrderServices
+                        var itemToRemove = OrderServices.FirstOrDefault(os => os.Service.ServiceID == selectableService.Service.ServiceID);
+                        if (itemToRemove != null)
+                        {
+                            OrderServices.Remove(itemToRemove);
+                        }
+                    }
+                }
+            }
+        }
+
         private void ClearForm()
         {
-            FirstName = string.Empty;
-            LastName = string.Empty;
+            CustomerName = string.Empty;
             Email = string.Empty;
             Phone = string.Empty;
             SelectedService = null;
             SelectedDate = null;
             IssueDescription = string.Empty;
+            SelectedTechnician = null;
+            OrderServices.Clear();
+
+            // Uncheck all selectable services
+            foreach (var service in SelectableServices)
+            {
+                service.IsSelected = false;
+            }
+
+            UpdateAvailableServicesToAdd();
 
             // Clear errors
-            FirstNameError = string.Empty;
-            LastNameError = string.Empty;
+            CustomerNameError = string.Empty;
             EmailError = string.Empty;
             PhoneError = string.Empty;
             ServiceError = string.Empty;
@@ -710,7 +812,6 @@ namespace gentech_services.ViewsModels
                 }
             };
 
-            // Create additional technicians
             User technician2 = new User
             {
                 Name = "M. Soriano",
@@ -731,16 +832,64 @@ namespace gentech_services.ViewsModels
                 CreatedAt = DateTime.Now,
             };
 
-            // Populate available services
-            availableServices = new ObservableCollection<Service>
+            Service service4 = new Service
+            {
+                ServiceID = 4,
+                Name = "OS Install",
+                Description = "Operating system installation",
+                Price = 5999,
+                CreatedAt = DateTime.Now,
+                IsActive = true,
+                CategoryID = 4,
+                Category = new Category
+                {
+                    CategoryID = 4,
+                    Name = "Software & System Services",
+                    Type = "Software & System Services"
+                }
+            };
+
+            Service service5 = new Service
+            {
+                ServiceID = 5,
+                Name = "Hardware Diagnostics",
+                Description = "Complete hardware diagnostic",
+                Price = 1200,
+                CreatedAt = DateTime.Now,
+                IsActive = true,
+                CategoryID = 5,
+                Category = new Category
+                {
+                    CategoryID = 5,
+                    Name = "Hardware Services",
+                    Type = "Hardware Services"
+                }
+            };
+
+            var servicesList = new List<Service>
             {
                 service1,
                 service2,
-                service3
+                service3,
+                service4,
+                service5
             };
-            OnPropertyChanged(nameof(AvailableServices));
 
-            // Populate available technicians with "All Technicians" option
+            // Create SelectableServices for checkbox selection
+            selectableServices = new ObservableCollection<SelectableService>();
+            foreach (var service in servicesList)
+            {
+                var selectableService = new SelectableService
+                {
+                    Service = service,
+                    IsSelected = false
+                };
+                selectableService.PropertyChanged += SelectableService_PropertyChanged;
+                selectableServices.Add(selectableService);
+            }
+
+            UpdateAvailableServicesToAdd();
+
             availableTechnicians = new ObservableCollection<User>
             {
                 new User { Name = "All Technicians" }, // Filter option
@@ -748,10 +897,9 @@ namespace gentech_services.ViewsModels
                 technician2,
                 technician3
             };
-            selectedTechnicianFilter = availableTechnicians[0]; // Set default to "All Technicians"
+            selectedTechnicianFilter = availableTechnicians[0]; 
             OnPropertyChanged(nameof(AvailableTechnicians));
 
-            // Create sample data - 25 orders with various statuses
             var random = new Random();
             var statuses = new[] { "Pending", "Ongoing", "Completed", "Cancelled" };
             var firstNames = new[] { "Nicole", "John", "Maria", "David", "Sarah", "Michael", "Emma", "James", "Olivia", "William" };

@@ -17,13 +17,13 @@ namespace gentech_services.Converters
                 }
                 else if (parameter?.ToString() == "Background")
                 {
-                    return isActive ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E8F5E9"))
-                                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFEBEE"));
+                    // Blue (#0000FF) with 10% opacity for both states
+                    return new SolidColorBrush(Color.FromArgb(26, 0, 0, 255)); // 10% opacity = 26/255
                 }
                 else if (parameter?.ToString() == "Foreground")
                 {
-                    return isActive ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#4CAF50"))
-                                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F44336"));
+                    return isActive ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00C206")) // Green
+                                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF0000")); // Red
                 }
             }
             return value;

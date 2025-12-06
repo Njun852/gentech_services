@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using gentech_services.Views.Pages;
 
 namespace gentech_services
 {
@@ -19,6 +20,40 @@ namespace gentech_services
         public MainWindow()
         {
             InitializeComponent();
+
+            // Navigate to Service Management by default
+            NavigateToPage("ServiceManagement");
         }
+
+        private void Sidebar_NavigationRequested(object sender, string pageName)
+        {
+            NavigateToPage(pageName);
+        }
+
+        private void NavigateToPage(string pageName)
+        {
+            UserControl page = pageName switch
+            {
+                "Dashboard" => new Views.Pages.DashboardPage(),
+                "ServiceManagement" => new ServiceManagementPage(),
+                "ServiceOrders" => new ServiceOrderPage(),
+                "InventoryManagement" => new InventoryManagementPage(),
+                "InventoryLog" => new InventoryLogPage(),
+                "ProductOrders" => new ProductOrdersPage(),
+                "ProductOrderHistory" => new ProductOrderHistoryPage(),
+                "UserManagement" => new UserManagementPage(),
+                _ => new ServiceManagementPage() // Default page
+            };
+
+            if (pageName == "Logout")
+            {
+                MessageBox.Show("Logout functionality will be implemented.", "Logout", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            MainContentFrame.Content = page;
+        }
+
+
     }
 }

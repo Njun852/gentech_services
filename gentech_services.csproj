@@ -11,12 +11,17 @@
 
   <ItemGroup>
     <None Remove="Resources\Assets\Icons\account_circle.png" />
+    <None Remove="Resources\Assets\Icons\Box.png" />
     <None Remove="Resources\Assets\Icons\dashboard_customize.png" />
     <None Remove="Resources\Assets\Icons\home_repair_service.png" />
     <None Remove="Resources\Assets\Icons\icnSearch.png" />
     <None Remove="Resources\Assets\Icons\icnWarning.png" />
     <None Remove="Resources\Assets\Icons\logo.png" />
+    <None Remove="Resources\Assets\Icons\minus.png" />
+    <None Remove="Resources\Assets\Icons\plus.png" />
     <None Remove="Resources\Assets\Icons\Product.png" />
+    <None Remove="Resources\Assets\Icons\warn_orange.png" />
+    <None Remove="Resources\Assets\Icons\warn_red.png" />
     <None Remove="Resources\Assets\Images\profileImage.png" />
   </ItemGroup>
 
@@ -24,6 +29,7 @@
     <Resource Include="Resources\Assets\Icons\account_circle.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Resources\Assets\Icons\Box.png" />
     <Resource Include="Resources\Assets\Icons\dashboard_customize.png" />
     <Resource Include="Resources\Assets\Icons\home_repair_service.png" />
     <Resource Include="Resources\Assets\Icons\icnSearch.png">
@@ -33,7 +39,11 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\Assets\Icons\logo.png" />
+    <Resource Include="Resources\Assets\Icons\minus.png" />
+    <Resource Include="Resources\Assets\Icons\plus.png" />
     <Resource Include="Resources\Assets\Icons\Product.png" />
+    <Resource Include="Resources\Assets\Icons\warn_orange.png" />
+    <Resource Include="Resources\Assets\Icons\warn_red.png" />
     <Resource Include="Resources\Assets\Images\profileImage.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>

@@ -2,44 +2,50 @@ using gentech_services.Models;
 using ProductServicesManagementSystem.Models;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace gentech_services.Views.UserControls
 {
-    public partial class EditOrderModal : UserControl
+    public partial class EditOrderModal : UserControl, INotifyPropertyChanged
     {
         private ServiceOrder currentOrder;
-        private bool hasChanges = false;
+        private ObservableCollection<OrderServiceItem> orderServices;
+        private ObservableCollection<Service> availableServices;
+        private ObservableCollection<User> availableTechnicians;
+        private User selectedTechnician;
 
-        // Store original values to detect changes
-        private string originalCustomerFirstName;
-        private string originalCustomerLastName;
-        private string originalCustomerEmail;
-        private string originalCustomerPhone;
-        private string originalDevice;
-        private decimal originalCost;
-        private Service originalService;
-        private User originalTechnician;
-        private DateTime originalAppointmentDate;
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public ObservableCollection<User> AvailableTechnicians
+        {
+            get { return availableTechnicians; }
+            set { availableTechnicians = value; OnPropertyChanged(nameof(AvailableTechnicians)); }
+        }
+
+        public User SelectedTechnician
+        {
+            get { return selectedTechnician; }
+            set { selectedTechnician = value; OnPropertyChanged(nameof(SelectedTechnician)); }
+        }
 
         public Action<ServiceOrder> OnSaveChanges { get; set; }
 
         public EditOrderModal()
         {
             InitializeComponent();
+            orderServices = new ObservableCollection<OrderServiceItem>();
+            DataContext = this;
 
-            // Track changes on all input fields
-            CustomerFirstNameTextBox.TextChanged += (s, e) => CheckForChanges();
-            CustomerLastNameTextBox.TextChanged += (s, e) => CheckForChanges();
-            CustomerEmailTextBox.TextChanged += (s, e) => CheckForChanges();
-            CustomerPhoneTextBox.TextChanged += (s, e) => CheckForChanges();
-            DeviceTextBox.TextChanged += (s, e) => CheckForChanges();
-            CostTextBox.TextChanged += (s, e) => CheckForChanges();
-            ServiceTypeComboBox.SelectionChanged += (s, e) => CheckForChanges();
-            TechnicianComboBox.SelectionChanged += (s, e) => CheckForChanges();
-            AppointmentDatePicker.SelectedDateChanged += (s, e) => CheckForChanges();
+            // Subscribe to technician selection changes for auto-save
+            TechnicianComboBox.SelectionChanged += TechnicianComboBox_SelectionChanged;
+        }
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void ShowModal(ServiceOrder order, ObservableCollection<Service> availableServices, ObservableCollection<User> availableTechnicians)
@@ -47,299 +53,174 @@ namespace gentech_services.Views.UserControls
             if (order == null) return;
 
             currentOrder = order;
-            hasChanges = false;
+            this.availableServices = availableServices;
+            AvailableTechnicians = availableTechnicians;
 
-            // Set header info
+            // Set order ID
             OrderIdText.Text = $"#S{order.SaleID:000}";
-            CreatedDateText.Text = $"Appointment: {order.AppointmentDate:MM/dd/yyyy}";
 
-            // Set status badge
-            StatusText.Text = order.Status;
-            SetStatusBadgeColor(order.Status);
-
-            // Store original values
-            if (order.Customer != null)
-            {
-                originalCustomerFirstName = order.Customer.FirstName ?? "";
-                originalCustomerLastName = order.Customer.LastName ?? "";
-                originalCustomerEmail = order.Customer.Email ?? "";
-                originalCustomerPhone = order.Customer.Phone ?? "";
-
-                CustomerFirstNameTextBox.Text = originalCustomerFirstName;
-                CustomerLastNameTextBox.Text = originalCustomerLastName;
-                CustomerEmailTextBox.Text = originalCustomerEmail;
-                CustomerPhoneTextBox.Text = originalCustomerPhone;
-            }
-
+            // Populate services table (for now just show the single service)
+            orderServices.Clear();
             if (order.Service != null)
             {
-                originalDevice = order.Service.Category?.Name ?? "";
-                originalCost = order.Service.Price;
-                originalService = order.Service;
-
-                DeviceTextBox.Text = originalDevice;
-                CostTextBox.Text = originalCost.ToString();
-
-                // Populate services
-                ServiceTypeComboBox.ItemsSource = availableServices;
-                ServiceTypeComboBox.SelectedItem = order.Service;
+                orderServices.Add(new OrderServiceItem
+                {
+                    Service = order.Service,
+                    Status = order.Status,
+                    Technician = order.Technician
+                });
             }
+            ServicesListView.ItemsSource = orderServices;
 
-            // Populate technicians
-            originalTechnician = order.Technician;
-            if (availableTechnicians != null)
-            {
-                TechnicianComboBox.ItemsSource = availableTechnicians;
-                TechnicianComboBox.DisplayMemberPath = "Name";
-                TechnicianComboBox.SelectedItem = order.Technician;
-            }
+            // Update total cost
+            UpdateTotalCost();
 
-            // Set appointment date
-            originalAppointmentDate = order.AppointmentDate;
-            AppointmentDatePicker.SelectedDate = order.AppointmentDate;
-
-            // Reset change tracking
-            hasChanges = false;
+            // Set selected technician
+            SelectedTechnician = order.Technician;
 
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;
         }
 
-        private void CheckForChanges()
+        private void UpdateTotalCost()
         {
-            if (currentOrder == null) return;
-
-            hasChanges = CustomerFirstNameTextBox.Text != originalCustomerFirstName ||
-                        CustomerLastNameTextBox.Text != originalCustomerLastName ||
-                        CustomerEmailTextBox.Text != originalCustomerEmail ||
-                        CustomerPhoneTextBox.Text != originalCustomerPhone ||
-                        DeviceTextBox.Text != originalDevice ||
-                        (decimal.TryParse(CostTextBox.Text, out decimal newCost) && newCost != originalCost) ||
-                        ServiceTypeComboBox.SelectedItem != originalService ||
-                        TechnicianComboBox.SelectedItem != originalTechnician ||
-                        (AppointmentDatePicker.SelectedDate.HasValue && AppointmentDatePicker.SelectedDate.Value.Date != originalAppointmentDate.Date);
+            decimal totalCost = orderServices.Sum(os => os.Service.Price);
+            TotalCostRun.Text = $"₱ {totalCost:N2}";
         }
 
-        private void SetStatusBadgeColor(string status)
+        private void StatusButton_Click(object sender, RoutedEventArgs e)
         {
-            switch (status?.ToLower())
+            if (sender is Button button && button.DataContext is OrderServiceItem serviceItem)
             {
-                case "completed":
-                    StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5F8E5"));
-                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#44AA44"));
-                    break;
-                case "pending":
-                    StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFF4E5"));
-                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF8800"));
-                    break;
-                case "cancelled":
-                    StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F0F0F0"));
-                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
-                    break;
-                case "ongoing":
-                default:
-                    StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE5E5"));
-                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF4444"));
-                    break;
-            }
-        }
+                string newStatus = "";
+                string confirmMessage = "";
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (hasChanges)
-            {
-                var result = MessageBox.Show(
-                    "You have unsaved changes. Do you want to save them?",
-                    "Save Changes",
-                    MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Question);
+                // Determine new status and confirmation message
+                if (serviceItem.Status == "Pending")
+                {
+                    newStatus = "Ongoing";
+                    confirmMessage = "Are you sure you want to set this service to Ongoing?";
+                }
+                else if (serviceItem.Status == "Ongoing")
+                {
+                    newStatus = "Completed";
+                    confirmMessage = "Are you sure you want to mark this service as Completed?";
+                }
+                else
+                {
+                    return; // No action for Completed or Cancelled status
+                }
 
+                // Show confirmation dialog
+                var result = MessageBox.Show(confirmMessage, "Confirm Status Change", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
-                    // Try to save - if validation fails, don't close
-                    if (!ValidateFields())
-                    {
-                        return; // Don't close if validation fails
-                    }
-                    SaveChanges();
-                }
-                else if (result == MessageBoxResult.Cancel)
-                {
-                    return; // Don't close
+                    serviceItem.Status = newStatus;
+
+                    // Auto-save changes
+                    AutoSaveChanges();
                 }
             }
-
-            CloseModal();
         }
 
-        private void SaveChanges()
+        private void CancelService_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.DataContext is OrderServiceItem serviceItem)
+            {
+                // Don't allow cancelling completed or already cancelled services
+                if (serviceItem.Status == "Completed" || serviceItem.Status == "Cancelled")
+                {
+                    return;
+                }
+
+                var result = MessageBox.Show("Are you sure you want to cancel this service?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (result == MessageBoxResult.Yes)
+                {
+                    serviceItem.Status = "Cancelled";
+                    // Don't remove from list, just update status
+
+                    // Auto-save changes
+                    AutoSaveChanges();
+                }
+            }
+        }
+
+        private void TechnicianComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Only auto-save if we have a current order (not during initial load)
+            if (currentOrder != null && SelectedTechnician != null)
+            {
+                AutoSaveChanges();
+            }
+        }
+
+        private void AutoSaveChanges()
         {
             if (currentOrder == null) return;
 
-            // Update customer info
-            if (currentOrder.Customer != null)
+            // Update technician if selected
+            if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
             {
-                currentOrder.Customer.FirstName = CustomerFirstNameTextBox.Text.Trim();
-                currentOrder.Customer.LastName = CustomerLastNameTextBox.Text.Trim();
-                currentOrder.Customer.Email = CustomerEmailTextBox.Text.Trim();
-                currentOrder.Customer.Phone = CustomerPhoneTextBox.Text.Trim();
+                currentOrder.Technician = SelectedTechnician;
+
+                // Update technician for all order service items
+                foreach (var orderServiceItem in orderServices)
+                {
+                    orderServiceItem.Technician = SelectedTechnician;
+                }
             }
 
-            // Update service
-            if (ServiceTypeComboBox.SelectedItem is Service selectedService)
+            // Update order status from service items
+            if (orderServices.Count > 0)
             {
-                currentOrder.Service = selectedService;
+                // Use the first service item's status as the order status
+                currentOrder.Status = orderServices[0].Status;
             }
 
-            // Update technician (can be null if unassigned)
-            if (TechnicianComboBox.SelectedItem is User selectedTechnician)
+            // Notify parent
+            OnSaveChanges?.Invoke(currentOrder);
+        }
+
+        private void SaveChanges_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentOrder == null) return;
+
+            // Update technician if selected
+            if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
             {
-                currentOrder.Technician = selectedTechnician;
-            }
-            else
-            {
-                // Set to unassigned if no technician selected
-                currentOrder.Technician = new User { Name = "Unassigned" };
+                currentOrder.Technician = SelectedTechnician;
+
+                // Update technician for all order service items
+                foreach (var orderServiceItem in orderServices)
+                {
+                    orderServiceItem.Technician = SelectedTechnician;
+                }
             }
 
-            // Update cost
-            if (decimal.TryParse(CostTextBox.Text, out decimal newCost) && currentOrder.Service != null)
+            // Update order status from service items
+            if (orderServices.Count > 0)
             {
-                currentOrder.Service.Price = newCost;
-            }
-
-            // Update appointment date
-            if (AppointmentDatePicker.SelectedDate.HasValue)
-            {
-                currentOrder.AppointmentDate = AppointmentDatePicker.SelectedDate.Value;
+                // Use the first service item's status as the order status
+                currentOrder.Status = orderServices[0].Status;
             }
 
             // Notify parent
             OnSaveChanges?.Invoke(currentOrder);
 
-            MessageBox.Show("Changes saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            hasChanges = false;
+            MessageBox.Show("Services updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            CloseModal();
         }
 
-        private bool ValidateFields()
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            // Validate First Name
-            if (string.IsNullOrWhiteSpace(CustomerFirstNameTextBox.Text))
-            {
-                MessageBox.Show("First name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CustomerFirstNameTextBox.Focus();
-                return false;
-            }
-
-            // Validate Last Name
-            if (string.IsNullOrWhiteSpace(CustomerLastNameTextBox.Text))
-            {
-                MessageBox.Show("Last name is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CustomerLastNameTextBox.Focus();
-                return false;
-            }
-
-            // Validate Email
-            if (string.IsNullOrWhiteSpace(CustomerEmailTextBox.Text))
-            {
-                MessageBox.Show("Email is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CustomerEmailTextBox.Focus();
-                return false;
-            }
-
-            if (!IsValidEmail(CustomerEmailTextBox.Text))
-            {
-                MessageBox.Show("Please enter a valid email address.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CustomerEmailTextBox.Focus();
-                return false;
-            }
-
-            // Validate Phone
-            if (string.IsNullOrWhiteSpace(CustomerPhoneTextBox.Text))
-            {
-                MessageBox.Show("Phone number is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CustomerPhoneTextBox.Focus();
-                return false;
-            }
-
-            if (!IsValidPhone(CustomerPhoneTextBox.Text))
-            {
-                MessageBox.Show("Please enter a valid phone number (10-11 digits).", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CustomerPhoneTextBox.Focus();
-                return false;
-            }
-
-            // Validate Service
-            if (ServiceTypeComboBox.SelectedItem == null)
-            {
-                MessageBox.Show("Please select a service type.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                ServiceTypeComboBox.Focus();
-                return false;
-            }
-
-            // Technician is optional - no validation needed
-
-            // Validate Cost
-            if (string.IsNullOrWhiteSpace(CostTextBox.Text))
-            {
-                MessageBox.Show("Cost is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CostTextBox.Focus();
-                return false;
-            }
-
-            if (!decimal.TryParse(CostTextBox.Text, out decimal cost) || cost <= 0)
-            {
-                MessageBox.Show("Please enter a valid cost greater than zero.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                CostTextBox.Focus();
-                return false;
-            }
-
-            // Validate Appointment Date
-            if (!AppointmentDatePicker.SelectedDate.HasValue)
-            {
-                MessageBox.Show("Appointment date is required.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                AppointmentDatePicker.Focus();
-                return false;
-            }
-
-            if (AppointmentDatePicker.SelectedDate.Value.Date < DateTime.Now.Date)
-            {
-                MessageBox.Show("Appointment date cannot be in the past.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                AppointmentDatePicker.Focus();
-                return false;
-            }
-
-            return true;
-        }
-
-        private bool IsValidEmail(string email)
-        {
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private bool IsValidPhone(string phone)
-        {
-            // Remove common formatting characters
-            string cleaned = phone.Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
-
-            // Check if it's all digits and has 10-11 digits (Philippine format)
-            return cleaned.Length >= 10 && cleaned.Length <= 11 && cleaned.All(char.IsDigit);
+            CloseModal();
         }
 
         public void CloseModal()
         {
             ModalOverlay.Visibility = Visibility.Collapsed;
-            hasChanges = false;
             currentOrder = null;
+            orderServices.Clear();
         }
     }
 }

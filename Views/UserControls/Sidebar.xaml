@@ -86,7 +86,9 @@
             <local:IconButton  Text="Products" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/Product.png"  Click="Products_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
             <StackPanel x:Name="ProductsSubButtons" Orientation="Vertical" HorizontalAlignment="Stretch" Visibility="Visible">
                 <local:IconButton  Text="Inventory Management" Click="InventoryManagement_Click" Style="{StaticResource SidebarSubButtonStyle}"/>
-                <local:IconButton  Text="Product Orders"  Click="ProductOrders_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton  Text="Point Of Sale"  Click="ProductOrders_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton  Text="Product Order History"  Click="ProductOrderHistory_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton  Text="Inventory Log" Click="InventoryLog_Click" Style="{StaticResource SidebarSubButtonStyle}"/>
             </StackPanel>
             <local:IconButton  Text="Users" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/Product.png"  Click="Users_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
         </StackPanel>
