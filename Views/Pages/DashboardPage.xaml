@@ -42,7 +42,11 @@
                     <ControlTemplate TargetType="Button">
                         <Border Background="{TemplateBinding Background}" CornerRadius="8">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Image Source="{TemplateBinding Tag}" Width="24" Height="24" Stretch="Uniform" Margin="0,0,0,8"/>
+                                <Image Width="24" Height="24" Stretch="Uniform" Margin="0,0,0,8">
+                                    <Image.Source>
+                                        <BitmapImage UriSource="{TemplateBinding Tag}" />
+                                    </Image.Source>
+                                </Image>
                                 <ContentPresenter HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Border>
@@ -70,7 +74,7 @@
                             <TextBlock Text="{Binding TodaysSales, StringFormat=₱{0:N0}}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,5,0,0"/>
                         </StackPanel>
                         <Border Width="40" Height="40" CornerRadius="20" Background="#DCFCE7" HorizontalAlignment="Right" VerticalAlignment="Top">
-                            <Image Source="{StaticResource Icon_Cart}" Width="20" Height="20" Stretch="Uniform"/>
+                            <Image Source="/Resources/Assets/Icons/sales.png" Width="20" Height="20" Stretch="Uniform"/>
                         </Border>
                     </Grid>
                 </Border>
@@ -82,7 +86,7 @@
                             <TextBlock Text="{Binding LowStockCount}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,5,0,0"/>
                         </StackPanel>
                         <Border Width="40" Height="40" CornerRadius="20" Background="#FEF3C7" HorizontalAlignment="Right" VerticalAlignment="Top">
-                            <Image Source="{StaticResource Icon_WarnOrange}" Width="20" Height="20" Stretch="Uniform"/>
+                            <Image Source="/Resources/Assets/Icons/warn_orange.png" Width="20" Height="20" Stretch="Uniform"/>
                         </Border>
                     </Grid>
                 </Border>
@@ -94,7 +98,7 @@
                             <TextBlock Text="{Binding OpenServiceJobs}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,5,0,0"/>
                         </StackPanel>
                         <Border Width="40" Height="40" CornerRadius="20" Background="#DBEAFE" HorizontalAlignment="Right" VerticalAlignment="Top">
-                            <Image Source="{StaticResource Icon_Wrench}" Width="20" Height="20" Stretch="Uniform"/>
+                            <Image Source="/Resources/Assets/Icons/wrench.png" Width="20" Height="20" Stretch="Uniform"/>
                         </Border>
                     </Grid>
                 </Border>
@@ -107,28 +111,10 @@
                             <TextBlock Text="{Binding TotalTransactions}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}" Margin="0,2,0,0"/>
                         </StackPanel>
                         <Border Width="40" Height="40" CornerRadius="20" Background="#DCFCE7" HorizontalAlignment="Right" VerticalAlignment="Top">
-                            <Image Source="{StaticResource Icon_List}" Width="20" Height="20" Stretch="Uniform"/>
+                            <Image Source="/Resources/Assets/Icons/cart.png" Width="20" Height="20" Stretch="Uniform"/>
                         </Border>
                     </Grid>
                 </Border>
-            </UniformGrid>
-
-            <TextBlock Text="Quick Access" Style="{StaticResource SectionTitle}"/>
-            <UniformGrid Columns="5" Margin="0,0,-15,30">
-                <Button Content="POS" Background="#3B82F6" Tag="{StaticResource Icon_Cart}"
-                        Command="{Binding NavigateToPOSCommand}" Style="{StaticResource QuickAccessBtn}"/>
-
-                <Button Content="Inventory" Background="#10B981" Tag="{StaticResource Icon_Inventory}"
-                        Command="{Binding NavigateToInventoryCommand}" Style="{StaticResource QuickAccessBtn}"/>
-
-                <Button Content="Product Orders" Background="#A855F7" Tag="{StaticResource Icon_List}"
-                        Command="{Binding NavigateToProductOrdersCommand}" Style="{StaticResource QuickAccessBtn}"/>
-
-                <Button Content="Service Orders" Background="#F97316" Tag="{StaticResource Icon_Wrench}"
-                        Command="{Binding NavigateToServiceOrdersCommand}" Style="{StaticResource QuickAccessBtn}"/>
-
-                <Button Content="Users" Background="#EC4899" Tag="{StaticResource Icon_Person}"
-                        Command="{Binding NavigateToUsersCommand}" Style="{StaticResource QuickAccessBtn}"/>
             </UniformGrid>
 
             <Grid Margin="0,0,0,30">

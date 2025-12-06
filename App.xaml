@@ -15,14 +15,6 @@
                 <ResourceDictionary Source="/Resources/Styles/TextBoxStyles.xaml"/>
                 <ResourceDictionary Source="/Resources/Styles/ScrollViewerStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-
-            <!-- Dashboard Icon Images -->
-            <BitmapImage x:Key="Icon_Cart" UriSource="/Resources/Assets/Icons/cart.png"/>
-            <BitmapImage x:Key="Icon_WarnOrange" UriSource="/Resources/Assets/Icons/warn_orange.png"/>
-            <BitmapImage x:Key="Icon_Person" UriSource="/Resources/Assets/Icons/person.png"/>
-            <BitmapImage x:Key="Icon_List" UriSource="/Resources/Assets/Icons/list.png"/>
-            <BitmapImage x:Key="Icon_Wrench" UriSource="/Resources/Assets/Icons/wrench.png"/>
-            <BitmapImage x:Key="Icon_Inventory" UriSource="/Resources/Assets/Icons/inventory.png"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

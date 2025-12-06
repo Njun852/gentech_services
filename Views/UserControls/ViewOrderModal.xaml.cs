@@ -104,6 +104,108 @@ namespace gentech_services.Views.UserControls
             ModalOverlay.Visibility = Visibility.Visible;
         }
 
+        public void ShowModal(System.Collections.Generic.List<ServiceOrder> orders)
+        {
+            if (orders == null || orders.Count == 0) return;
+
+            var firstOrder = orders[0];
+
+            // Set order details using first order
+            OrderIdText.Text = $"#S{firstOrder.SaleID:000}";
+            CreatedDateText.Text = $"Created: {firstOrder.AppointmentDate:MM/dd/yyyy}";
+
+            // Set status badge using first order's status
+            StatusText.Text = firstOrder.Status;
+            SetStatusBadgeColor(firstOrder.Status);
+
+            // Customer details from first order
+            if (firstOrder.Customer != null)
+            {
+                CustomerNameText.Text = $"{firstOrder.Customer.FirstName} {firstOrder.Customer.LastName}";
+                CustomerEmailText.Text = firstOrder.Customer.Email ?? "N/A";
+                CustomerPhoneText.Text = firstOrder.Customer.Phone ?? "N/A";
+            }
+
+            // Clear existing services
+            ServiceOrdersList.Children.Clear();
+
+            // Loop through all orders and add each service
+            decimal totalCost = 0;
+            foreach (var order in orders)
+            {
+                if (order.Service != null)
+                {
+                    // Create a horizontal stack panel for status badge + service name
+                    var serviceContainer = new StackPanel
+                    {
+                        Orientation = Orientation.Horizontal,
+                        Margin = new Thickness(0, 0, 0, 6)
+                    };
+
+                    // Status badge
+                    var statusBorder = new Border
+                    {
+                        CornerRadius = new CornerRadius(10),
+                        Padding = new Thickness(8, 3, 8, 3),
+                        Margin = new Thickness(0, 0, 8, 0),
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    var statusTextBlock = new TextBlock
+                    {
+                        Text = order.Status ?? "Pending",
+                        FontSize = 11,
+                        FontWeight = FontWeights.SemiBold
+                    };
+
+                    // Set status badge colors
+                    SetServiceStatusColors(statusBorder, statusTextBlock, order.Status);
+
+                    statusBorder.Child = statusTextBlock;
+
+                    // Service name
+                    var serviceText = new TextBlock
+                    {
+                        Text = order.Service.Name ?? "N/A",
+                        FontSize = 13,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    serviceContainer.Children.Add(statusBorder);
+                    serviceContainer.Children.Add(serviceText);
+                    ServiceOrdersList.Children.Add(serviceContainer);
+
+                    totalCost += order.Service.Price;
+                }
+            }
+
+            CostText.Text = $"₱ {totalCost:N0}";
+
+            // Technician from first order
+            if (firstOrder.Technician != null)
+            {
+                TechnicianText.Text = firstOrder.Technician.Name ?? "Unassigned";
+            }
+            else
+            {
+                TechnicianText.Text = "Unassigned";
+            }
+
+            // Description - combine all service descriptions
+            var descriptions = new System.Collections.Generic.List<string>();
+            foreach (var order in orders)
+            {
+                if (!string.IsNullOrWhiteSpace(order.Service?.Description))
+                {
+                    descriptions.Add($"• {order.Service.Name}: {order.Service.Description}");
+                }
+            }
+            DescriptionText.Text = descriptions.Count > 0 ? string.Join("\n", descriptions) : "No description available";
+
+            // Show the modal
+            ModalOverlay.Visibility = Visibility.Visible;
+        }
+
         private void SetStatusBadgeColor(string status)
         {
             switch (status?.ToLower())
