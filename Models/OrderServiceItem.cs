@@ -10,6 +10,7 @@ namespace gentech_services.Models
         private Service service;
         private User technician;
         private string status;
+        private ServiceOrder serviceOrder;
 
         public Service Service
         {
@@ -27,6 +28,12 @@ namespace gentech_services.Models
         {
             get { return status; }
             set { status = value; OnPropertyChanged(nameof(Status)); }
+        }
+
+        public ServiceOrder ServiceOrder
+        {
+            get { return serviceOrder; }
+            set { serviceOrder = value; OnPropertyChanged(nameof(ServiceOrder)); }
         }
 
         public OrderServiceItem()

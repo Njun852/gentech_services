@@ -82,6 +82,44 @@ namespace gentech_services.Views.UserControls
             ModalOverlay.Visibility = Visibility.Visible;
         }
 
+        public void ShowModal(System.Collections.Generic.List<ServiceOrder> orders, ObservableCollection<Service> availableServices, ObservableCollection<User> availableTechnicians)
+        {
+            if (orders == null || orders.Count == 0) return;
+
+            currentOrder = orders[0];
+            this.availableServices = availableServices;
+            AvailableTechnicians = availableTechnicians;
+
+            // Set order ID
+            OrderIdText.Text = $"#S{orders[0].SaleID:000}";
+
+            // Populate services table with all services in the appointment
+            orderServices.Clear();
+            foreach (var order in orders)
+            {
+                if (order.Service != null)
+                {
+                    orderServices.Add(new OrderServiceItem
+                    {
+                        Service = order.Service,
+                        Status = order.Status,
+                        Technician = order.Technician,
+                        ServiceOrder = order
+                    });
+                }
+            }
+            ServicesListView.ItemsSource = orderServices;
+
+            // Update total cost
+            UpdateTotalCost();
+
+            // Set selected technician from first order
+            SelectedTechnician = orders[0].Technician;
+
+            // Show the modal
+            ModalOverlay.Visibility = Visibility.Visible;
+        }
+
         private void UpdateTotalCost()
         {
             decimal totalCost = orderServices.Sum(os => os.Service.Price);
@@ -158,26 +196,24 @@ namespace gentech_services.Views.UserControls
         {
             if (currentOrder == null) return;
 
-            // Update technician if selected
-            if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
+            // Update technician and status for each service order
+            foreach (var orderServiceItem in orderServices)
             {
-                currentOrder.Technician = SelectedTechnician;
-
-                // Update technician for all order service items
-                foreach (var orderServiceItem in orderServices)
+                if (orderServiceItem.ServiceOrder != null)
                 {
-                    orderServiceItem.Technician = SelectedTechnician;
+                    // Update technician if selected
+                    if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
+                    {
+                        orderServiceItem.ServiceOrder.Technician = SelectedTechnician;
+                        orderServiceItem.Technician = SelectedTechnician;
+                    }
+
+                    // Update status
+                    orderServiceItem.ServiceOrder.Status = orderServiceItem.Status;
                 }
             }
 
-            // Update order status from service items
-            if (orderServices.Count > 0)
-            {
-                // Use the first service item's status as the order status
-                currentOrder.Status = orderServices[0].Status;
-            }
-
-            // Notify parent
+            // Notify parent with first order (for compatibility)
             OnSaveChanges?.Invoke(currentOrder);
         }
 

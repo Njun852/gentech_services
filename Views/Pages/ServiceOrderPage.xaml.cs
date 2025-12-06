@@ -31,14 +31,14 @@ namespace gentech_services.Views.Pages
             DataContext = viewModel;
 
             // Wire up the modal actions
-            viewModel.ShowViewOrderModal = (order) =>
+            viewModel.ShowViewOrderModal = (orders) =>
             {
-                ViewOrderModal.ShowModal(order);
+                ViewOrderModal.ShowModal(orders);
             };
 
-            viewModel.ShowEditOrderModal = (order, services, technicians) =>
+            viewModel.ShowEditOrderModal = (orders, services, technicians) =>
             {
-                EditOrderModal.ShowModal(order, services, technicians);
+                EditOrderModal.ShowModal(orders, services, technicians);
             };
 
             viewModel.ShowEditAppointmentModal = (order) =>

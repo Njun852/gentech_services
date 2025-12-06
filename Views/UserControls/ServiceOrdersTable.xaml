@@ -78,9 +78,10 @@
             <Border Grid.Row="2" CornerRadius="0,0,14,14" ClipToBounds="True">
                 <ScrollViewer Style="{StaticResource CustomScrollViewer}"
                             VerticalScrollBarVisibility="Auto"
-                            HorizontalScrollBarVisibility="Disabled">
+                            HorizontalScrollBarVisibility="Disabled"
+                            Padding="0,0,0,12">
                     <ItemsControl
-              ItemsSource="{Binding ServiceOrders, RelativeSource={RelativeSource AncestorType=UserControl}}"
+              ItemsSource="{Binding ViewModel.GroupedServiceOrders, RelativeSource={RelativeSource AncestorType=UserControl}}"
               d:ItemsSource="{d:SampleData ItemCount=5}"
               AlternationCount="2">
                     <ItemsControl.ItemTemplate>
@@ -114,10 +115,11 @@
                                             </MultiBinding>
                                         </TextBlock.Text>
                                     </TextBlock>
-                                    <TextBlock Grid.Column="2" Text="{Binding Service.Name}"
+                                    <TextBlock Grid.Column="2" Text="{Binding ServicesDisplay}"
                                TextWrapping="Wrap" FontWeight="Bold"
-                               TextAlignment="Center" VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="3" Text="{Binding Service.Price, StringFormat=₱ {0:N0}}"
+                               TextAlignment="Center" VerticalAlignment="Center"
+                               Padding="4,2"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding TotalPrice, StringFormat=₱ {0:N0}}"
                                VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="4" Text="{Binding AppointmentDate, StringFormat=dd/MM/yyyy}"
                                VerticalAlignment="Center"/>
@@ -173,7 +175,7 @@
                                             Background="White"
                                             BorderThickness="1"
                                          Click="KebabMenu_Click"
-                                         Tag="{Binding}">
+                                         Tag="{Binding Orders[0]}">
                                         <Button.ContextMenu>
                                             <ContextMenu HasDropShadow="True" Width="200">
                                                 <ContextMenu.Template>

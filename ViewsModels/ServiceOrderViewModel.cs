@@ -4,6 +4,7 @@ using ProductServicesManagementSystem.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,17 +13,61 @@ using System.Windows.Controls;
 
 namespace gentech_services.ViewsModels
 {
+    // Grouped Service Order class for displaying multiple services per appointment
+    public class GroupedServiceOrder : INotifyPropertyChanged
+    {
+        public int SaleID { get; set; }
+        public Customer Customer { get; set; }
+        public DateTime AppointmentDate { get; set; }
+        public string Status { get; set; }
+        public string PaymentMethod { get; set; }
+        public List<ServiceOrder> Orders { get; set; }
+
+        public string ServicesDisplay
+        {
+            get
+            {
+                if (Orders == null || !Orders.Any()) return "";
+
+                if (Orders.Count <= 2)
+                {
+                    return string.Join(", ", Orders.Select(o => o.Service?.Name));
+                }
+                else
+                {
+                    var firstTwo = string.Join(", ", Orders.Take(2).Select(o => o.Service?.Name));
+                    return $"{firstTwo} +{Orders.Count - 2} more";
+                }
+            }
+        }
+
+        public decimal TotalPrice
+        {
+            get
+            {
+                return Orders?.Sum(o => o.Service?.Price ?? 0) ?? 0;
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void OnPropertyChanged(string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
     internal class ServiceOrderViewModel : ViewModelBase
     {
         private Appointment currentAppointment;
         private ObservableCollection<ServiceOrder> serviceOrders;
         private ObservableCollection<ServiceOrder> allServiceOrders; // Store unfiltered list
+        private ObservableCollection<GroupedServiceOrder> groupedServiceOrders;
         private ServiceOrder selectedOrder;
         private ObservableCollection<User> availableTechnicians;
 
         // Action to trigger modal display from View
-        public Action<ServiceOrder> ShowViewOrderModal { get; set; }
-        public Action<ServiceOrder, ObservableCollection<Service>, ObservableCollection<User>> ShowEditOrderModal { get; set; }
+        public Action<List<ServiceOrder>> ShowViewOrderModal { get; set; }
+        public Action<List<ServiceOrder>, ObservableCollection<Service>, ObservableCollection<User>> ShowEditOrderModal { get; set; }
         public Action<ServiceOrder> ShowEditAppointmentModal { get; set; }
 
         private string customerName;
@@ -49,6 +94,12 @@ namespace gentech_services.ViewsModels
 
         public ObservableCollection<ServiceOrder> ServiceOrders {
             get { return serviceOrders; } }
+
+        public ObservableCollection<GroupedServiceOrder> GroupedServiceOrders
+        {
+            get { return groupedServiceOrders; }
+            set { groupedServiceOrders = value; OnPropertyChanged(); }
+        }
 
         public ServiceOrder SelectedOrder
         {
@@ -211,6 +262,7 @@ namespace gentech_services.ViewsModels
             currentAppointment = new Appointment();
             serviceOrders = new ObservableCollection<ServiceOrder>();
             allServiceOrders = new ObservableCollection<ServiceOrder>();
+            groupedServiceOrders = new ObservableCollection<GroupedServiceOrder>();
             orderServices = new ObservableCollection<OrderServiceItem>();
             availableServicesToAdd = new ObservableCollection<Service>();
             selectableServices = new ObservableCollection<SelectableService>();
@@ -246,7 +298,9 @@ namespace gentech_services.ViewsModels
             if (order != null)
             {
                 SelectedOrder = order;
-                ShowViewOrderModal?.Invoke(order);
+                // Find all orders with the same SaleID (appointment)
+                var ordersForAppointment = allServiceOrders.Where(o => o.SaleID == order.SaleID).ToList();
+                ShowViewOrderModal?.Invoke(ordersForAppointment);
             }
         }
 
@@ -255,8 +309,10 @@ namespace gentech_services.ViewsModels
             if (order != null)
             {
                 SelectedOrder = order;
+                // Find all orders with the same SaleID (appointment)
+                var ordersForAppointment = allServiceOrders.Where(o => o.SaleID == order.SaleID).ToList();
                 var services = new ObservableCollection<Service>(selectableServices.Select(s => s.Service));
-                ShowEditOrderModal?.Invoke(order, services, availableTechnicians);
+                ShowEditOrderModal?.Invoke(ordersForAppointment, services, availableTechnicians);
             }
         }
 
@@ -506,6 +562,29 @@ namespace gentech_services.ViewsModels
             {
                 serviceOrders.Add(order);
             }
+
+            // Update grouped orders
+            UpdateGroupedOrders();
+        }
+
+        private void UpdateGroupedOrders()
+        {
+            groupedServiceOrders.Clear();
+
+            var grouped = serviceOrders.GroupBy(o => o.SaleID).Select(g => new GroupedServiceOrder
+            {
+                SaleID = g.Key,
+                Customer = g.First().Customer,
+                AppointmentDate = g.First().AppointmentDate,
+                Status = g.First().Status,
+                PaymentMethod = g.First().PaymentMethod,
+                Orders = g.ToList()
+            }).OrderBy(g => g.SaleID);
+
+            foreach (var group in grouped)
+            {
+                groupedServiceOrders.Add(group);
+            }
         }
 
         private bool ValidateForm()
@@ -616,20 +695,31 @@ namespace gentech_services.ViewsModels
                 CreatedAt = DateTime.Now
             };
 
+            // Generate a unique SaleID for this appointment (same for all services)
+            int newSaleID = allServiceOrders.Any() ? allServiceOrders.Max(o => o.SaleID) + 1 : 1;
+
             // Create service orders for each service with single technician
             foreach (var orderServiceItem in OrderServices)
             {
-                SaleID = serviceOrders.Count + 1, // Simple ID generation
-                Customer = customer,
-                Service = SelectedService,
-                AppointmentDate = SelectedDate.Value,
-                Status = "Pending",
-                Technician = new User { Name = "Unassigned" } // Default technician
-            };
+                var serviceOrder = new ServiceOrder
+                {
+                    SaleID = newSaleID, // Same SaleID for all services in this appointment
+                    Customer = customer,
+                    Service = orderServiceItem.Service,
+                    AppointmentDate = SelectedDate.Value,
+                    Status = orderServiceItem.Status,
+                    PaymentMethod = "Not Set",
+                    Technician = SelectedTechnician == null || SelectedTechnician.Name == "All Technicians"
+                        ? new User { Name = "Unassigned" }
+                        : SelectedTechnician
+                };
 
                 allServiceOrders.Add(serviceOrder);
                 serviceOrders.Add(serviceOrder);
             }
+
+            // Update grouped orders to refresh the table
+            UpdateGroupedOrders();
 
             // Calculate total cost
             decimal totalCost = OrderServices.Sum(os => os.Service.Price);
@@ -908,36 +998,65 @@ namespace gentech_services.ViewsModels
             var services = new[] { service1, service2, service3 };
             var paymentMethods = new[] { "Cash", "Credit Card", "GCash", "PayPal", "Bank Transfer" };
 
-            for (int i = 1; i <= 25; i++)
+            // Generate 15 appointments, some with multiple services
+            int appointmentId = 1;
+            for (int i = 1; i <= 15; i++)
             {
                 var firstName = firstNames[random.Next(firstNames.Length)];
                 var lastName = lastNames[random.Next(lastNames.Length)];
                 var status = statuses[random.Next(statuses.Length)];
                 var daysOffset = random.Next(-10, 30);
+                var paymentMethod = paymentMethods[random.Next(paymentMethods.Length)];
+                var appointmentDate = DateTime.Now.AddDays(daysOffset);
 
-                var order = new ServiceOrder
+                var customer = new Customer
                 {
-                    SaleID = i,
-                    AppointmentDate = DateTime.Now.AddDays(daysOffset),
-                    Status = status,
-                    Technician = status == "Pending" && random.Next(3) == 0
-                        ? new User { Name = "Unassigned" }
-                        : technicians[random.Next(technicians.Length)],
-                    Service = services[random.Next(services.Length)],
-                    PaymentMethod = paymentMethods[random.Next(paymentMethods.Length)],
-                    Customer = new Customer
-                    {
-                        FirstName = firstName,
-                        LastName = lastName,
-                        Email = $"{firstName.ToLower()}.{lastName.ToLower()}@email.com",
-                        Phone = $"09{random.Next(100000000, 999999999)}",
-                        CreatedAt = DateTime.Now.AddDays(-random.Next(1, 60))
-                    }
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Email = $"{firstName.ToLower()}.{lastName.ToLower()}@email.com",
+                    Phone = $"09{random.Next(100000000, 999999999)}",
+                    CreatedAt = DateTime.Now.AddDays(-random.Next(1, 60))
                 };
 
-                allServiceOrders.Add(order);
-                serviceOrders.Add(order);
+                // Randomly decide if this appointment has 1, 2, or 3 services
+                int serviceCount = random.Next(1, 4); // 1, 2, or 3 services
+                var selectedServices = new List<Service>();
+
+                // Select unique services for this appointment
+                while (selectedServices.Count < serviceCount)
+                {
+                    var service = servicesList[random.Next(servicesList.Count)];
+                    if (!selectedServices.Contains(service))
+                    {
+                        selectedServices.Add(service);
+                    }
+                }
+
+                // Create service orders for each service in this appointment
+                foreach (var service in selectedServices)
+                {
+                    var order = new ServiceOrder
+                    {
+                        SaleID = appointmentId,
+                        AppointmentDate = appointmentDate,
+                        Status = status,
+                        Technician = status == "Pending" && random.Next(3) == 0
+                            ? new User { Name = "Unassigned" }
+                            : technicians[random.Next(technicians.Length)],
+                        Service = service,
+                        PaymentMethod = paymentMethod,
+                        Customer = customer
+                    };
+
+                    allServiceOrders.Add(order);
+                    serviceOrders.Add(order);
+                }
+
+                appointmentId++;
             }
+
+            // Initialize grouped orders
+            UpdateGroupedOrders();
         }
     }
 }
