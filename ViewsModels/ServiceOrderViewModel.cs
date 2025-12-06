@@ -23,6 +23,7 @@ namespace gentech_services.ViewsModels
         // Action to trigger modal display from View
         public Action<ServiceOrder> ShowViewOrderModal { get; set; }
         public Action<ServiceOrder, ObservableCollection<Service>, ObservableCollection<User>> ShowEditOrderModal { get; set; }
+        public Action<ServiceOrder> ShowEditAppointmentModal { get; set; }
 
         private string customerName;
         private string email;
@@ -194,6 +195,7 @@ namespace gentech_services.ViewsModels
 
         public RelayCommand ViewDetailsCommand { get; private set; }
         public RelayCommand EditCommand { get; private set; }
+        public RelayCommand EditAppointmentCommand { get; private set; }
         public RelayCommand SetToOngoingCommand { get; private set; }
         public RelayCommand SetToCompletedCommand { get; private set; }
         public RelayCommand CancelAppointmentCommand { get; private set; }
@@ -225,6 +227,7 @@ namespace gentech_services.ViewsModels
 
             ViewDetailsCommand = new RelayCommand(obj => ViewDetails(obj as ServiceOrder));
             EditCommand = new RelayCommand(obj => Edit(obj as ServiceOrder));
+            EditAppointmentCommand = new RelayCommand(obj => EditAppointment(obj as ServiceOrder));
             SetToOngoingCommand = new RelayCommand(obj => SetToOngoing(obj as ServiceOrder));
             SetToCompletedCommand = new RelayCommand(obj => SetToCompleted(obj as ServiceOrder));
             CancelAppointmentCommand = new RelayCommand(obj => CancelAppointment(obj as ServiceOrder));
@@ -254,6 +257,15 @@ namespace gentech_services.ViewsModels
                 SelectedOrder = order;
                 var services = new ObservableCollection<Service>(selectableServices.Select(s => s.Service));
                 ShowEditOrderModal?.Invoke(order, services, availableTechnicians);
+            }
+        }
+
+        private void EditAppointment(ServiceOrder order)
+        {
+            if (order != null)
+            {
+                SelectedOrder = order;
+                ShowEditAppointmentModal?.Invoke(order);
             }
         }
 

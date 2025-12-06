@@ -92,6 +92,17 @@ namespace gentech_services.Views.UserControls
             }
         }
 
+        private void EditAppointmentMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var contextMenu = FindContextMenu(sender);
+            if (contextMenu?.Tag is ServiceOrder order)
+            {
+                dynamic vm = DataContext;
+                vm.EditAppointmentCommand?.Execute(order);
+                contextMenu.IsOpen = false;
+            }
+        }
+
         private void SetOngoingMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var contextMenu = FindContextMenu(sender);

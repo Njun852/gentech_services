@@ -3,20 +3,49 @@ using ProductServicesManagementSystem.Models;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace gentech_services.Views.UserControls
 {
-    public partial class EditOrderModal : UserControl
+    public partial class EditOrderModal : UserControl, INotifyPropertyChanged
     {
         private ServiceOrder currentOrder;
+        private ObservableCollection<OrderServiceItem> orderServices;
+        private ObservableCollection<Service> availableServices;
+        private ObservableCollection<User> availableTechnicians;
+        private User selectedTechnician;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public ObservableCollection<User> AvailableTechnicians
+        {
+            get { return availableTechnicians; }
+            set { availableTechnicians = value; OnPropertyChanged(nameof(AvailableTechnicians)); }
+        }
+
+        public User SelectedTechnician
+        {
+            get { return selectedTechnician; }
+            set { selectedTechnician = value; OnPropertyChanged(nameof(SelectedTechnician)); }
+        }
+
         public Action<ServiceOrder> OnSaveChanges { get; set; }
 
         public EditOrderModal()
         {
             InitializeComponent();
+            orderServices = new ObservableCollection<OrderServiceItem>();
+            DataContext = this;
+
+            // Subscribe to technician selection changes for auto-save
+            TechnicianComboBox.SelectionChanged += TechnicianComboBox_SelectionChanged;
+        }
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void ShowModal(ServiceOrder order, ObservableCollection<Service> availableServices, ObservableCollection<User> availableTechnicians)
@@ -24,93 +53,161 @@ namespace gentech_services.Views.UserControls
             if (order == null) return;
 
             currentOrder = order;
+            this.availableServices = availableServices;
+            AvailableTechnicians = availableTechnicians;
 
-            // Set header info
+            // Set order ID
             OrderIdText.Text = $"#S{order.SaleID:000}";
 
             // Populate services table (for now just show the single service)
-            var serviceItems = new ObservableCollection<ServiceItem>();
+            orderServices.Clear();
             if (order.Service != null)
             {
-                serviceItems.Add(new ServiceItem
+                orderServices.Add(new OrderServiceItem
                 {
-                    ServiceName = order.Service.Name,
-                    Price = order.Service.Price,
-                    Status = "Pending", // Default status
-                    StatusButtonText = "Set to Ongoing",
-                    StatusButtonBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA500"))
+                    Service = order.Service,
+                    Status = order.Status,
+                    Technician = order.Technician
                 });
             }
-            ServicesListView.ItemsSource = serviceItems;
+            ServicesListView.ItemsSource = orderServices;
 
-            // Set total cost
-            TotalCostRun.Text = $"Total cost: ₱ {order.Service?.Price:N2}";
+            // Update total cost
+            UpdateTotalCost();
 
-            // Set issue description
-            IssueDescriptionTextBox.Text = order.Service?.Description ?? "";
+            // Set selected technician
+            SelectedTechnician = order.Technician;
 
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;
         }
 
-        private void AddService_Click(object sender, RoutedEventArgs e)
+        private void UpdateTotalCost()
         {
-            MessageBox.Show("Add Service functionality to be implemented", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
-        }
-
-        private void AssignTechnician_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Assign Technician functionality to be implemented", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+            decimal totalCost = orderServices.Sum(os => os.Service.Price);
+            TotalCostRun.Text = $"₱ {totalCost:N2}";
         }
 
         private void StatusButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is ServiceItem serviceItem)
+            if (sender is Button button && button.DataContext is OrderServiceItem serviceItem)
             {
-                // Toggle status
+                string newStatus = "";
+                string confirmMessage = "";
+
+                // Determine new status and confirmation message
                 if (serviceItem.Status == "Pending")
                 {
-                    serviceItem.Status = "Ongoing";
-                    serviceItem.StatusButtonText = "Set to Completed";
-                    serviceItem.StatusButtonBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00C206"));
+                    newStatus = "Ongoing";
+                    confirmMessage = "Are you sure you want to set this service to Ongoing?";
                 }
                 else if (serviceItem.Status == "Ongoing")
                 {
-                    serviceItem.Status = "Completed";
-                    serviceItem.StatusButtonText = "Completed";
-                    serviceItem.StatusButtonBackground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
+                    newStatus = "Completed";
+                    confirmMessage = "Are you sure you want to mark this service as Completed?";
+                }
+                else
+                {
+                    return; // No action for Completed or Cancelled status
+                }
+
+                // Show confirmation dialog
+                var result = MessageBox.Show(confirmMessage, "Confirm Status Change", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (result == MessageBoxResult.Yes)
+                {
+                    serviceItem.Status = newStatus;
+
+                    // Auto-save changes
+                    AutoSaveChanges();
                 }
             }
         }
 
         private void CancelService_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is ServiceItem serviceItem)
+            if (sender is Button button && button.DataContext is OrderServiceItem serviceItem)
             {
+                // Don't allow cancelling completed or already cancelled services
+                if (serviceItem.Status == "Completed" || serviceItem.Status == "Cancelled")
+                {
+                    return;
+                }
+
                 var result = MessageBox.Show("Are you sure you want to cancel this service?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
-                    // Remove service from list
-                    var items = ServicesListView.ItemsSource as ObservableCollection<ServiceItem>;
-                    items?.Remove(serviceItem);
+                    serviceItem.Status = "Cancelled";
+                    // Don't remove from list, just update status
+
+                    // Auto-save changes
+                    AutoSaveChanges();
                 }
             }
+        }
+
+        private void TechnicianComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Only auto-save if we have a current order (not during initial load)
+            if (currentOrder != null && SelectedTechnician != null)
+            {
+                AutoSaveChanges();
+            }
+        }
+
+        private void AutoSaveChanges()
+        {
+            if (currentOrder == null) return;
+
+            // Update technician if selected
+            if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
+            {
+                currentOrder.Technician = SelectedTechnician;
+
+                // Update technician for all order service items
+                foreach (var orderServiceItem in orderServices)
+                {
+                    orderServiceItem.Technician = SelectedTechnician;
+                }
+            }
+
+            // Update order status from service items
+            if (orderServices.Count > 0)
+            {
+                // Use the first service item's status as the order status
+                currentOrder.Status = orderServices[0].Status;
+            }
+
+            // Notify parent
+            OnSaveChanges?.Invoke(currentOrder);
         }
 
         private void SaveChanges_Click(object sender, RoutedEventArgs e)
         {
             if (currentOrder == null) return;
 
-            // Update description
-            if (currentOrder.Service != null)
+            // Update technician if selected
+            if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
             {
-                currentOrder.Service.Description = IssueDescriptionTextBox.Text;
+                currentOrder.Technician = SelectedTechnician;
+
+                // Update technician for all order service items
+                foreach (var orderServiceItem in orderServices)
+                {
+                    orderServiceItem.Technician = SelectedTechnician;
+                }
+            }
+
+            // Update order status from service items
+            if (orderServices.Count > 0)
+            {
+                // Use the first service item's status as the order status
+                currentOrder.Status = orderServices[0].Status;
             }
 
             // Notify parent
             OnSaveChanges?.Invoke(currentOrder);
 
-            MessageBox.Show("Changes saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Services updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             CloseModal();
         }
 
@@ -123,52 +220,7 @@ namespace gentech_services.Views.UserControls
         {
             ModalOverlay.Visibility = Visibility.Collapsed;
             currentOrder = null;
-        }
-    }
-
-    // Helper class for service items in the table
-    public class ServiceItem : INotifyPropertyChanged
-    {
-        private string serviceName;
-        private decimal price;
-        private string status;
-        private string statusButtonText;
-        private Brush statusButtonBackground;
-
-        public string ServiceName
-        {
-            get => serviceName;
-            set { serviceName = value; OnPropertyChanged(nameof(ServiceName)); }
-        }
-
-        public decimal Price
-        {
-            get => price;
-            set { price = value; OnPropertyChanged(nameof(Price)); }
-        }
-
-        public string Status
-        {
-            get => status;
-            set { status = value; OnPropertyChanged(nameof(Status)); }
-        }
-
-        public string StatusButtonText
-        {
-            get => statusButtonText;
-            set { statusButtonText = value; OnPropertyChanged(nameof(StatusButtonText)); }
-        }
-
-        public Brush StatusButtonBackground
-        {
-            get => statusButtonBackground;
-            set { statusButtonBackground = value; OnPropertyChanged(nameof(StatusButtonBackground)); }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            orderServices.Clear();
         }
     }
 }

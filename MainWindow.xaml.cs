@@ -34,7 +34,7 @@ namespace gentech_services
         {
             UserControl page = pageName switch
             {
-                "Dashboard" => new DashboardPage(),
+                "Dashboard" => new Views.Pages.DashboardPage(),
                 "ServiceManagement" => new ServiceManagementPage(),
                 "ServiceOrders" => new ServiceOrderPage(),
                 "InventoryManagement" => new InventoryManagementPage(),
@@ -52,21 +52,6 @@ namespace gentech_services
             }
 
             MainContentFrame.Content = page;
-        }
-
-        // Placeholder pages for navigation (these need to be created)
-        private class DashboardPage : UserControl
-        {
-            public DashboardPage()
-            {
-                Content = new TextBlock
-                {
-                    Text = "Dashboard Page - To be implemented",
-                    FontSize = 24,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-            }
         }
 
 

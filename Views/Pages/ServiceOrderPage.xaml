@@ -141,5 +141,8 @@
 
         <!-- Edit Order Modal -->
         <control:EditOrderModal x:Name="EditOrderModal" Grid.RowSpan="2"/>
+
+        <!-- Edit Appointment Modal -->
+        <control:EditAppointmentModal x:Name="EditAppointmentModal" Grid.RowSpan="2"/>
     </Grid>
 </UserControl>

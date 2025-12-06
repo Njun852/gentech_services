@@ -195,7 +195,19 @@
                                                                         HorizontalContentAlignment="Left"
                                                                         Click="ViewMenuItem_Click"
                                                                         Tag="8"/>
-                                                                <Button Content="Edit"
+                                                                <Button Content="Edit Services"
+                                                                        Style="{StaticResource OutlineButton}"
+                                                                        Background="White"
+                                                                        Foreground="Black"
+                                                                        FontWeight="Normal"
+                                                                        BorderThickness="0"
+                                                                        Height="32"
+                                                                        Margin="0,0,0,4"
+                                                                        HorizontalContentAlignment="Left"
+                                                                        Click="EditMenuItem_Click"
+                                                                        Tag="8"
+                                                                        Visibility="{Binding Tag.Status, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource StatusToEditVisibilityConverter}}"/>
+                                                                <Button Content="Edit Appointment"
                                                                         Style="{StaticResource OutlineButton}"
                                                                         Background="White"
                                                                         Foreground="Black"
@@ -204,7 +216,7 @@
                                                                         Height="32"
                                                                         Margin="0"
                                                                         HorizontalContentAlignment="Left"
-                                                                        Click="EditMenuItem_Click"
+                                                                        Click="EditAppointmentMenuItem_Click"
                                                                         Tag="8"
                                                                         Visibility="{Binding Tag.Status, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource StatusToEditVisibilityConverter}}"/>
                                                             </StackPanel>

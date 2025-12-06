@@ -41,8 +41,25 @@ namespace gentech_services.Views.Pages
                 EditOrderModal.ShowModal(order, services, technicians);
             };
 
-            // Wire up save changes callback
+            viewModel.ShowEditAppointmentModal = (order) =>
+            {
+                EditAppointmentModal.ShowModal(order);
+            };
+
+            // Wire up save changes callback for Edit Order Modal
             EditOrderModal.OnSaveChanges = (updatedOrder) =>
+            {
+                // Force UI refresh by removing and re-adding the item
+                var index = viewModel.ServiceOrders.IndexOf(updatedOrder);
+                if (index >= 0)
+                {
+                    viewModel.ServiceOrders.RemoveAt(index);
+                    viewModel.ServiceOrders.Insert(index, updatedOrder);
+                }
+            };
+
+            // Wire up save changes callback for Edit Appointment Modal
+            EditAppointmentModal.OnSaveChanges = (updatedOrder) =>
             {
                 // Force UI refresh by removing and re-adding the item
                 var index = viewModel.ServiceOrders.IndexOf(updatedOrder);
