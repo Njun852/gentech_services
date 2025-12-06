@@ -74,6 +74,7 @@
                 <Border Grid.Row="0" Background="White" CornerRadius="8,8,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.8*"/>
                         <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="1.5*"/>
                         <ColumnDefinition Width="1.5*"/>
@@ -89,11 +90,12 @@
                         </Style>
                     </Grid.Resources>
 
-                    <TextBlock Grid.Column="0" Text="NAME"/>
-                    <TextBlock Grid.Column="1" Text="CATEGORY"/>
-                    <TextBlock Grid.Column="2" Text="PRICE"/>
-                    <TextBlock Grid.Column="3" Text="UPDATED"/>
-                    <TextBlock Grid.Column="4" Text="ACTION"/>
+                    <TextBlock Grid.Column="0" Text="ID"/>
+                    <TextBlock Grid.Column="1" Text="NAME"/>
+                    <TextBlock Grid.Column="2" Text="CATEGORY"/>
+                    <TextBlock Grid.Column="3" Text="PRICE"/>
+                    <TextBlock Grid.Column="4" Text="UPDATED"/>
+                    <TextBlock Grid.Column="5" Text="ACTION"/>
                 </Grid>
                 </Border>
 
@@ -112,6 +114,7 @@
                                             Margin="4,2">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="0.8*"/>
                                                 <ColumnDefinition Width="2*"/>
                                                 <ColumnDefinition Width="1.5*"/>
                                                 <ColumnDefinition Width="1.5*"/>
@@ -126,13 +129,14 @@
                                                 </Style>
                                             </Grid.Resources>
 
-                                            <TextBlock Grid.Column="0" Text="{Binding Name}" FontWeight="SemiBold"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Category.Name}"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding Price, StringFormat='₱ {0:N2}'}"/>
-                                            <TextBlock Grid.Column="3" Text="{Binding UpdatedAt, StringFormat='MM/dd/yyyy'}"/>
+                                            <TextBlock Grid.Column="0" Text="{Binding ServiceID, StringFormat='SV{0:000}'}" FontWeight="Bold"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Category.Name}"/>
+                                            <TextBlock Grid.Column="3" Text="{Binding Price, StringFormat='₱ {0:N2}'}"/>
+                                            <TextBlock Grid.Column="4" Text="{Binding UpdatedAt, StringFormat='MM/dd/yyyy'}"/>
 
                                             <!-- Action Button -->
-                                            <Button Grid.Column="4"
+                                            <Button Grid.Column="5"
                                                     Style="{StaticResource KebabMenuButton}"
                                                     Background="White"
                                                     BorderThickness="1"

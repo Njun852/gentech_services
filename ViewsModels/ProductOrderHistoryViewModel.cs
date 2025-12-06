@@ -20,6 +20,28 @@ namespace gentech_services.ViewsModels
         private bool isReturnModalVisible;
         private ObservableCollection<ReturnItem> returnItems;
         private decimal totalRefund;
+        private bool isVoidModalVisible;
+        private ProductOrderHistoryItem selectedOrderForVoid;
+
+        public bool IsVoidModalVisible
+        {
+            get { return isVoidModalVisible; }
+            set
+            {
+                isVoidModalVisible = value;
+                OnPropertyChanged(nameof(IsVoidModalVisible));
+            }
+        }
+
+        public ProductOrderHistoryItem SelectedOrderForVoid
+        {
+            get { return selectedOrderForVoid; }
+            set
+            {
+                selectedOrderForVoid = value;
+                OnPropertyChanged(nameof(SelectedOrderForVoid));
+            }
+        }
 
         public ObservableCollection<ProductOrderHistoryItem> FilteredOrders
         {
@@ -132,6 +154,9 @@ namespace gentech_services.ViewsModels
         public RelayCommand IncreaseReturnQuantityCommand { get; private set; }
         public RelayCommand DecreaseReturnQuantityCommand { get; private set; }
         public RelayCommand ProcessReturnCommand { get; private set; }
+        public RelayCommand ShowVoidModalCommand { get; private set; }
+        public RelayCommand CloseVoidModalCommand { get; private set; }
+        public RelayCommand VoidTransactionCommand { get; private set; }
 
         public ProductOrderHistoryViewModel()
         {
@@ -142,6 +167,9 @@ namespace gentech_services.ViewsModels
             IncreaseReturnQuantityCommand = new RelayCommand(obj => IncreaseReturnQuantity(obj as ReturnItem));
             DecreaseReturnQuantityCommand = new RelayCommand(obj => DecreaseReturnQuantity(obj as ReturnItem));
             ProcessReturnCommand = new RelayCommand(obj => ProcessReturn());
+            ShowVoidModalCommand = new RelayCommand(obj => ShowVoidModal(obj as ProductOrderHistoryItem));
+            CloseVoidModalCommand = new RelayCommand(obj => CloseVoidModal());
+            VoidTransactionCommand = new RelayCommand(obj => VoidTransaction());
 
             OrderDetailsItems = new ObservableCollection<OrderDetailItem>();
             ReturnItems = new ObservableCollection<ReturnItem>();
@@ -246,9 +274,9 @@ namespace gentech_services.ViewsModels
             // Load sample order details
             OrderDetailsItems = new ObservableCollection<OrderDetailItem>
             {
-                new OrderDetailItem { ProductId = "P001", Name = "AMD Ryzen 5 5600", SKU = "83M00051PH", Quantity = 1, UnitPrice = 8950, Subtotal = 8950 },
-                new OrderDetailItem { ProductId = "P002", Name = "AMD Ryzen 5 5600", SKU = "83M00051PH", Quantity = 1, UnitPrice = 8950, Subtotal = 8950 },
-                new OrderDetailItem { ProductId = "P003", Name = "AMD Ryzen 5 5600", SKU = "83M00051PH", Quantity = 1, UnitPrice = 8950, Subtotal = 8950 }
+                new OrderDetailItem { ProductId = "P001", Name = "AMD Ryzen 5 5600", Category = "Processor", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 8950, Subtotal = 17900 },
+                new OrderDetailItem { ProductId = "P002", Name = "ASUS ROG STRIX B550-F", Category = "Motherboard", Quantity = 1, ReturnedQuantity = 1, UnitPrice = 9500, Subtotal = 9500 },
+                new OrderDetailItem { ProductId = "P003", Name = "Corsair Vengeance 16GB DDR4", Category = "RAM", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 3200, Subtotal = 6400 }
             };
 
             OrderDetailsTotal = OrderDetailsItems.Sum(item => item.Subtotal);
@@ -264,11 +292,12 @@ namespace gentech_services.ViewsModels
         {
             if (order == null) return;
 
-            // Load sample return items
+            // Load sample return items - only show items with available quantity (not fully returned)
             ReturnItems = new ObservableCollection<ReturnItem>
             {
-                new ReturnItem { ProductName = "AMD Ryzen 5 5600", OriginalQuantity = 2, UnitPrice = 8950, ReturnQuantity = 0 },
-                new ReturnItem { ProductName = "LENOVO LEGION 3", OriginalQuantity = 1, UnitPrice = 49999, ReturnQuantity = 1 }
+                new ReturnItem { ProductName = "AMD Ryzen 5 5600", OriginalQuantity = 2, ReturnedQuantity = 0, UnitPrice = 8950, ReturnQuantity = 0 },
+                // ASUS ROG STRIX B550-F is excluded (fully returned: OriginalQuantity=1, ReturnedQuantity=1)
+                new ReturnItem { ProductName = "Corsair Vengeance 16GB DDR4", OriginalQuantity = 2, ReturnedQuantity = 0, UnitPrice = 3200, ReturnQuantity = 0 }
             };
 
             CalculateTotalRefund();
@@ -282,7 +311,7 @@ namespace gentech_services.ViewsModels
 
         private void IncreaseReturnQuantity(ReturnItem item)
         {
-            if (item != null && item.ReturnQuantity < item.OriginalQuantity)
+            if (item != null && item.ReturnQuantity < item.AvailableQuantity)
             {
                 item.ReturnQuantity++;
                 CalculateTotalRefund();
@@ -322,6 +351,46 @@ namespace gentech_services.ViewsModels
             {
                 MessageBox.Show("Return processed successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 CloseReturnModal();
+            }
+        }
+
+        private void ShowVoidModal(ProductOrderHistoryItem order)
+        {
+            if (order == null) return;
+
+            // Load sample order details
+            OrderDetailsItems = new ObservableCollection<OrderDetailItem>
+            {
+                new OrderDetailItem { ProductId = "P001", Name = "AMD Ryzen 5 5600", Category = "Processor", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 8950, Subtotal = 17900 },
+                new OrderDetailItem { ProductId = "P002", Name = "ASUS ROG STRIX B550-F", Category = "Motherboard", Quantity = 1, ReturnedQuantity = 1, UnitPrice = 9500, Subtotal = 9500 },
+                new OrderDetailItem { ProductId = "P003", Name = "Corsair Vengeance 16GB DDR4", Category = "RAM", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 3200, Subtotal = 6400 }
+            };
+
+            OrderDetailsTotal = OrderDetailsItems.Sum(item => item.Subtotal);
+            SelectedOrderForVoid = order;
+            IsVoidModalVisible = true;
+        }
+
+        private void CloseVoidModal()
+        {
+            IsVoidModalVisible = false;
+            SelectedOrderForVoid = null;
+        }
+
+        private void VoidTransaction()
+        {
+            if (SelectedOrderForVoid == null) return;
+
+            var result = MessageBox.Show(
+                "Are you sure you want to void this transaction? This action cannot be undone.",
+                "Confirm Void Transaction",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                MessageBox.Show("Transaction voided successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                CloseVoidModal();
             }
         }
     }
@@ -409,8 +478,9 @@ namespace gentech_services.ViewsModels
     {
         private string productId;
         private string name;
-        private string sku;
+        private string category;
         private int quantity;
+        private int returnedQuantity;
         private decimal unitPrice;
         private decimal subtotal;
 
@@ -434,13 +504,13 @@ namespace gentech_services.ViewsModels
             }
         }
 
-        public string SKU
+        public string Category
         {
-            get { return sku; }
+            get { return category; }
             set
             {
-                sku = value;
-                OnPropertyChanged(nameof(SKU));
+                category = value;
+                OnPropertyChanged(nameof(Category));
             }
         }
 
@@ -453,6 +523,19 @@ namespace gentech_services.ViewsModels
                 OnPropertyChanged(nameof(Quantity));
             }
         }
+
+        public int ReturnedQuantity
+        {
+            get { return returnedQuantity; }
+            set
+            {
+                returnedQuantity = value;
+                OnPropertyChanged(nameof(ReturnedQuantity));
+                OnPropertyChanged(nameof(HasReturns));
+            }
+        }
+
+        public bool HasReturns => returnedQuantity > 0;
 
         public decimal UnitPrice
         {
@@ -487,6 +570,7 @@ namespace gentech_services.ViewsModels
     {
         private string productName;
         private int originalQuantity;
+        private int returnedQuantity;
         private decimal unitPrice;
         private int returnQuantity;
 
@@ -507,8 +591,22 @@ namespace gentech_services.ViewsModels
             {
                 originalQuantity = value;
                 OnPropertyChanged(nameof(OriginalQuantity));
+                OnPropertyChanged(nameof(AvailableQuantity));
             }
         }
+
+        public int ReturnedQuantity
+        {
+            get { return returnedQuantity; }
+            set
+            {
+                returnedQuantity = value;
+                OnPropertyChanged(nameof(ReturnedQuantity));
+                OnPropertyChanged(nameof(AvailableQuantity));
+            }
+        }
+
+        public int AvailableQuantity => originalQuantity - returnedQuantity;
 
         public decimal UnitPrice
         {

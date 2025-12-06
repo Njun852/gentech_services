@@ -63,5 +63,24 @@ namespace gentech_services.Views.Pages
                 viewModel.CloseReturnModalCommand.Execute(null);
             }
         }
+
+        private void VoidOrder_Click(object sender, RoutedEventArgs e)
+        {
+            OrderActionPopup.IsOpen = false;
+            var viewModel = DataContext as ProductOrderHistoryViewModel;
+            if (viewModel != null && selectedOrder != null)
+            {
+                viewModel.ShowVoidModalCommand.Execute(selectedOrder);
+            }
+        }
+
+        private void CloseVoidModal_Click(object sender, RoutedEventArgs e)
+        {
+            var viewModel = DataContext as ProductOrderHistoryViewModel;
+            if (viewModel != null)
+            {
+                viewModel.CloseVoidModalCommand.Execute(null);
+            }
+        }
     }
 }

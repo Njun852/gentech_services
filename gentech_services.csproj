@@ -19,6 +19,8 @@
     <None Remove="Resources\Assets\Icons\minus.png" />
     <None Remove="Resources\Assets\Icons\plus.png" />
     <None Remove="Resources\Assets\Icons\Product.png" />
+    <None Remove="Resources\Assets\Icons\warn_orange.png" />
+    <None Remove="Resources\Assets\Icons\warn_red.png" />
     <None Remove="Resources\Assets\Images\profileImage.png" />
   </ItemGroup>
 
@@ -36,6 +38,8 @@
     <Resource Include="Resources\Assets\Icons\minus.png" />
     <Resource Include="Resources\Assets\Icons\plus.png" />
     <Resource Include="Resources\Assets\Icons\Product.png" />
+    <Resource Include="Resources\Assets\Icons\warn_orange.png" />
+    <Resource Include="Resources\Assets\Icons\warn_red.png" />
     <Resource Include="Resources\Assets\Images\profileImage.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>

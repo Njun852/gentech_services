@@ -58,17 +58,18 @@
                         BorderThickness="1"
                         CornerRadius="8">
                     <ComboBox Style="{StaticResource OutlineComboBox}"
+                              Tag="Payment Status"
                               SelectedValue="{Binding SelectedPaymentStatus}"
                               SelectedValuePath="Content"
-                              Width="180"
+                              Width="200"
                               Height="38"
                               FontSize="13"
                               BorderThickness="0"
                               Background="Transparent">
-                        <ComboBoxItem Content="Payment Status" IsSelected="True"/>
                         <ComboBoxItem Content="Paid"/>
-                        <ComboBoxItem Content="Pending"/>
-                        <ComboBoxItem Content="Cancelled"/>
+                        <ComboBoxItem Content="Partially Returned"/>
+                        <ComboBoxItem Content="Fully Returned"/>
+                        <ComboBoxItem Content="Voided"/>
                     </ComboBox>
                 </Border>
             </Grid>
@@ -179,38 +180,31 @@
 
                                         <!-- Payment Status -->
                                         <Border Grid.Column="5"
-                                                CornerRadius="4"
-                                                Padding="8,4"
+                                                Background="#1A0000FF"
+                                                CornerRadius="20"
+                                                Padding="20,8"
+                                                MinWidth="80"
                                                 HorizontalAlignment="Left"
                                                 VerticalAlignment="Center">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding PaymentStatus}" Value="Paid">
-                                                            <Setter Property="Background" Value="#E8F5E9"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding PaymentStatus}" Value="Pending">
-                                                            <Setter Property="Background" Value="#FFF3E0"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding PaymentStatus}" Value="Cancelled">
-                                                            <Setter Property="Background" Value="#FFEBEE"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <TextBlock FontSize="12"
+                                            <TextBlock FontSize="14"
                                                        FontWeight="SemiBold"
+                                                       TextAlignment="Center"
+                                                       HorizontalAlignment="Center"
                                                        Text="{Binding PaymentStatus}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#0000FF"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding PaymentStatus}" Value="Paid">
                                                                 <Setter Property="Foreground" Value="#2E7D32"/>
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Pending">
+                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Partially Returned">
                                                                 <Setter Property="Foreground" Value="#F57C00"/>
                                                             </DataTrigger>
-                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Cancelled">
+                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Fully Returned">
+                                                                <Setter Property="Foreground" Value="#0000FF"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding PaymentStatus}" Value="Voided">
                                                                 <Setter Property="Foreground" Value="#C62828"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
@@ -363,7 +357,8 @@
                 <Button Height="40"
                         Background="#FF0000"
                         BorderThickness="0"
-                        Cursor="Hand">
+                        Cursor="Hand"
+                        Click="VoidOrder_Click">
                     <Button.Resources>
                         <Style TargetType="Border">
                             <Setter Property="CornerRadius" Value="5"/>
@@ -505,7 +500,7 @@
 
                                 <TextBlock Grid.Column="0" Text="Product" FontWeight="Bold" FontSize="13"/>
                                 <TextBlock Grid.Column="1" Text="Name" FontWeight="Bold" FontSize="13"/>
-                                <TextBlock Grid.Column="2" Text="SKU" FontWeight="Bold" FontSize="13"/>
+                                <TextBlock Grid.Column="2" Text="Category" FontWeight="Bold" FontSize="13"/>
                                 <TextBlock Grid.Column="3" Text="Quantity" FontWeight="Bold" FontSize="13"/>
                                 <TextBlock Grid.Column="4" Text="Unit Price" FontWeight="Bold" FontSize="13"/>
                                 <TextBlock Grid.Column="5" Text="Subtotal" FontWeight="Bold" FontSize="13"/>
@@ -534,8 +529,18 @@
 
                                                 <TextBlock Grid.Column="0" Text="{Binding ProductId}" FontSize="14" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="14" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding SKU}" FontSize="14" VerticalAlignment="Center" Foreground="#666"/>
-                                                <TextBlock Grid.Column="3" Text="{Binding Quantity}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Category}" FontSize="14" VerticalAlignment="Center" Foreground="#666"/>
+
+                                                <!-- Quantity with returned info -->
+                                                <StackPanel Grid.Column="3" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Quantity}" FontSize="14"/>
+                                                    <TextBlock Visibility="{Binding HasReturns, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                               FontSize="12"
+                                                               Foreground="Red">
+                                                        <Run Text="("/><Run Text="{Binding ReturnedQuantity}"/><Run Text=" returned)"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+
                                                 <TextBlock Grid.Column="4" Text="{Binding UnitPrice, StringFormat='₱ {0:N0}'}" FontSize="14" VerticalAlignment="Center"/>
                                                 <TextBlock Grid.Column="5" Text="{Binding Subtotal, StringFormat='₱ {0:N0}'}" FontSize="14" VerticalAlignment="Center" FontWeight="SemiBold"/>
                                             </Grid>
@@ -682,14 +687,18 @@
                                                 </TextBlock>
                                             </Grid>
 
-                                            <!-- Original Quantity -->
+                                            <!-- Original Quantity and Returned -->
                                             <TextBlock Grid.Row="2"
                                                        FontSize="12"
                                                        Foreground="#666">
                                                 <Run Text="Original:"/>
-                                                <Run Text="{Binding OriginalQuantity}"/>
+                                                <Run Text="{Binding OriginalQuantity, Mode=OneWay}"/>
                                                 <Run Text=" × ₱"/>
-                                                <Run Text="{Binding UnitPrice, StringFormat='{}{0:N0}'}"/>
+                                                <Run Text="{Binding UnitPrice, StringFormat='{}{0:N0}', Mode=OneWay}"/>
+                                                <Run Text=" "/>
+                                                <Run Text="(Available: " Foreground="#666"/>
+                                                <Run Text="{Binding AvailableQuantity, Mode=OneWay}" Foreground="#666"/>
+                                                <Run Text=")" Foreground="#666"/>
                                             </TextBlock>
 
                                             <!-- Return Quantity Controls -->
@@ -772,13 +781,14 @@
                                                                         <Border Background="{TemplateBinding Background}"
                                                                                 BorderBrush="{TemplateBinding BorderBrush}"
                                                                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                                                                CornerRadius="6">
-                                                                            <TextBlock Text="+"
-                                                                                       FontSize="16"
-                                                                                       FontWeight="Bold"
-                                                                                       Foreground="Black"
-                                                                                       HorizontalAlignment="Center"
-                                                                                       VerticalAlignment="Center"/>
+                                                                                CornerRadius="6"
+                                                                                Padding="8">
+                                                                            <Image Source="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/plus.png"
+                                                                                   Width="16"
+                                                                                   Height="16"
+                                                                                   Stretch="Uniform"
+                                                                                   HorizontalAlignment="Center"
+                                                                                   VerticalAlignment="Center"/>
                                                                         </Border>
                                                                     </ControlTemplate>
                                                                 </Setter.Value>
@@ -793,7 +803,7 @@
                                                            Foreground="#666"
                                                            VerticalAlignment="Center">
                                                     <Run Text="of"/>
-                                                    <Run Text="{Binding OriginalQuantity}"/>
+                                                    <Run Text="{Binding AvailableQuantity, Mode=OneWay}"/>
                                                 </TextBlock>
                                             </StackPanel>
                                         </Grid>
@@ -910,6 +920,270 @@
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
                                                         <Setter TargetName="Border" Property="Background" Value="#0000CC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Void Transaction Modal -->
+        <Grid Visibility="{Binding IsVoidModalVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <!-- Semi-transparent background -->
+            <Border Background="#80000000" />
+
+            <!-- Modal Content -->
+            <Border Background="White"
+                    CornerRadius="12"
+                    Width="500"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Padding="32,24,32,24">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0"
+                            Background="Transparent"
+                            Padding="0">
+                        <StackPanel>
+                            <!-- Warning Icon Circle -->
+                            <Border Width="60"
+                                    Height="60"
+                                    Background="#FFF5F5"
+                                    CornerRadius="30"
+                                    HorizontalAlignment="Left"
+                                    Margin="0,0,0,16">
+                                <Border Width="40"
+                                        Height="40"
+                                        Background="#FEE2E2"
+                                        CornerRadius="20"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="!"
+                                              FontSize="24"
+                                              FontWeight="Bold"
+                                              Foreground="#DC2626"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                                </Border>
+                            </Border>
+                            <TextBlock Text="Void This Transaction?"
+                                      FontSize="20"
+                                      FontWeight="Bold"
+                                      VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Body -->
+                    <ScrollViewer Grid.Row="1"
+                                  Style="{StaticResource CustomScrollViewer}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  MaxHeight="400"
+                                  Padding="0">
+                        <StackPanel>
+                            <!-- Order Info -->
+                            <TextBlock FontSize="14" Foreground="#666" Margin="0,0,0,16" TextWrapping="Wrap">
+                                <Run Text="This will completely cancel order "/>
+                                <Run Text="{Binding SelectedOrderForVoid.OrderNumber, Mode=OneWay}" FontWeight="Bold"/>
+                                <LineBreak/>
+                                <Run Text="from "/>
+                                <Run Text="{Binding SelectedOrderForVoid.OrderDate, StringFormat='MM-dd-yyyy', Mode=OneWay}"/>
+                                <Run Text=" at 9:00:00 PM"/>
+                            </TextBlock>
+
+                            <!-- Transaction Details -->
+                            <Border Background="#F9FAFB"
+                                    CornerRadius="8"
+                                    Padding="16"
+                                    Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="Transaction Details:"
+                                              FontSize="14"
+                                              Margin="0,0,0,12"/>
+
+                                    <ItemsControl ItemsSource="{Binding OrderDetailsItems}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,0,0,8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" FontSize="13">
+                                                        <Run Text="{Binding Quantity, Mode=OneWay}"/>
+                                                        <Run Text="x "/>
+                                                        <Run Text="{Binding Name, Mode=OneWay}"/>
+                                                    </TextBlock>
+                                                    <TextBlock Grid.Column="1"
+                                                              FontSize="13"
+                                                              FontWeight="SemiBold">
+                                                        <Run Text="₱"/>
+                                                        <Run Text="{Binding Subtotal, StringFormat='{}{0:N0}', Mode=OneWay}"/>
+                                                    </TextBlock>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Total -->
+                                    <Border BorderBrush="#E5E7EB"
+                                            BorderThickness="0,1,0,0"
+                                            Padding="0,12,0,0"
+                                            Margin="0,8,0,0">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0"
+                                                      Text="Total:"
+                                                      FontWeight="Bold"
+                                                      FontSize="14"/>
+                                            <TextBlock Grid.Column="1"
+                                                      FontWeight="Bold"
+                                                      FontSize="14">
+                                                <Run Text="₱"/>
+                                                <Run Text="{Binding OrderDetailsTotal, StringFormat='{}{0:N0}', Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Warning Message -->
+                            <Border Background="#FEF3C7"
+                                    BorderBrush="#F59E0B"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Padding="16">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <Image Source="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/warn_orange.png"
+                                               Width="16"
+                                               Height="16"
+                                               Margin="0,0,8,0"
+                                               VerticalAlignment="Center"/>
+                                        <TextBlock Text="Important:"
+                                                  FontWeight="Bold"
+                                                  FontSize="13"
+                                                  Foreground="#92400E"
+                                                  VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock FontSize="12"
+                                              Foreground="#92400E"
+                                              TextWrapping="Wrap"
+                                              LineHeight="18">
+                                        <Run Text="• Transaction will be completely removed from sales records"/>
+                                        <LineBreak/>
+                                        <Run Text="• This action cannot be undone"/>
+                                        <LineBreak/>
+                                        <Run Text="• Consider using RETURN if customer was charged"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Footer Buttons -->
+                    <Grid Grid.Row="2"
+                          Margin="0,20,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Cancel Button -->
+                        <Button Grid.Column="0"
+                                Content="Cancel"
+                                Height="40"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Background="White"
+                                Foreground="Black"
+                                BorderBrush="Black"
+                                BorderThickness="1"
+                                Cursor="Hand"
+                                Click="CloseVoidModal_Click">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="8"/>
+                                </Style>
+                            </Button.Resources>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="8"
+                                                        x:Name="Border">
+                                                    <TextBlock Text="{TemplateBinding Content}"
+                                                               FontSize="{TemplateBinding FontSize}"
+                                                               FontWeight="{TemplateBinding FontWeight}"
+                                                               Foreground="{TemplateBinding Foreground}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Border" Property="Background" Value="#F5F5F5"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Void Transaction Button -->
+                        <Button Grid.Column="2"
+                                Content="Yes, Void Transaction"
+                                Height="40"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Background="#EF4444"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                Command="{Binding VoidTransactionCommand}">
+                            <Button.Resources>
+                                <Style TargetType="Border">
+                                    <Setter Property="CornerRadius" Value="8"/>
+                                </Style>
+                            </Button.Resources>
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        CornerRadius="8"
+                                                        x:Name="Border">
+                                                    <TextBlock Text="{TemplateBinding Content}"
+                                                               FontSize="{TemplateBinding FontSize}"
+                                                               FontWeight="{TemplateBinding FontWeight}"
+                                                               Foreground="{TemplateBinding Foreground}"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="Border" Property="Background" Value="#B91C1C"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>

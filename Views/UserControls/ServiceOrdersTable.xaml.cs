@@ -70,7 +70,7 @@ namespace gentech_services.Views.UserControls
             }
         }
 
-        private void ViewMenuItem_Click(object sender, MouseButtonEventArgs e)
+        private void ViewMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var contextMenu = FindContextMenu(sender);
             if (contextMenu?.Tag is ServiceOrder order)
@@ -81,7 +81,7 @@ namespace gentech_services.Views.UserControls
             }
         }
 
-        private void EditMenuItem_Click(object sender, MouseButtonEventArgs e)
+        private void EditMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var contextMenu = FindContextMenu(sender);
             if (contextMenu?.Tag is ServiceOrder order)

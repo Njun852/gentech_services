@@ -1,0 +1,257 @@
+﻿<UserControl x:Class="gentech_services.Views.Pages.DashboardPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="gentech_services.Views.Pages"
+             mc:Ignorable="d"
+             d:DesignHeight="1050" d:DesignWidth="850" Background="White">
+    <UserControl.Resources>
+        <!-- Card Shadow Effect -->
+        <DropShadowEffect x:Key="CardShadow"
+                          BlurRadius="10"
+                          ShadowDepth="2"
+                          Opacity="0.3"
+                          Color="#000000"/>
+
+        <!-- Stat Card Style -->
+        <Style x:Key="StatCard" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Effect" Value="{StaticResource CardShadow}"/>
+            <Setter Property="Margin" Value="8"/>
+        </Style>
+
+        <!-- Quick Access Button Style -->
+        <Style x:Key="QuickAccessButton" TargetType="Button" BasedOn="{StaticResource OutlineButton}">
+            <Setter Property="Height" Value="50"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#0000FF"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Foreground" Value="#0000FF"/>
+            <Setter Property="Margin" Value="4"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{StaticResource CustomScrollViewer}">
+        <StackPanel Margin="20">
+            <!-- Header -->
+            <TextBlock Text="Dashboard" FontSize="28" FontWeight="Bold" Margin="0,0,0,4"/>
+            <TextBlock Text="Overview of your business" FontSize="14" Foreground="#666" Margin="0,0,0,20"/>
+
+            <!-- Stats Cards -->
+            <UniformGrid Rows="1" Columns="4" Margin="0,0,0,20">
+                <!-- Today's Sales -->
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="Today's Sales" FontSize="12" Foreground="#666" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding TodaysSales, StringFormat=₱ {0:N2}}"
+                                   FontSize="24" FontWeight="Bold" Foreground="#00C206"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Low Stock Items -->
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="Low Stock Items" FontSize="12" Foreground="#666" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding LowStockCount}"
+                                   FontSize="24" FontWeight="Bold" Foreground="#FF0000"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Open Service Jobs -->
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="Open Service Jobs" FontSize="12" Foreground="#666" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding OpenServiceJobs}"
+                                   FontSize="24" FontWeight="Bold" Foreground="#FFA500"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Total Transactions -->
+                <Border Style="{StaticResource StatCard}">
+                    <StackPanel>
+                        <TextBlock Text="Total Transactions" FontSize="12" Foreground="#666" Margin="0,0,0,8"/>
+                        <TextBlock Text="{Binding TotalTransactions}"
+                                   FontSize="24" FontWeight="Bold" Foreground="#0000FF"/>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- Quick Access Buttons -->
+            <TextBlock Text="Quick Access" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
+            <UniformGrid Rows="1" Columns="5" Margin="0,0,0,20">
+                <Button Content="POS" Style="{StaticResource QuickAccessButton}" Command="{Binding NavigateToPOSCommand}"/>
+                <Button Content="Inventory" Style="{StaticResource QuickAccessButton}" Command="{Binding NavigateToInventoryCommand}"/>
+                <Button Content="Product Orders" Style="{StaticResource QuickAccessButton}" Command="{Binding NavigateToProductOrdersCommand}"/>
+                <Button Content="Service Orders" Style="{StaticResource QuickAccessButton}" Command="{Binding NavigateToServiceOrdersCommand}"/>
+                <Button Content="Users" Style="{StaticResource QuickAccessButton}" Command="{Binding NavigateToUsersCommand}"/>
+            </UniformGrid>
+
+            <!-- Two Column Layout -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Low Stock Alert List -->
+                <Border Grid.Column="0" Style="{StaticResource StatCard}" Padding="0">
+                    <StackPanel>
+                        <Border Background="#FF0000" CornerRadius="12,12,0,0" Padding="16,12">
+                            <TextBlock Text="Low Stock Alert" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                        </Border>
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" Style="{StaticResource CustomScrollViewer}">
+                            <ItemsControl ItemsSource="{Binding LowStockItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#EEE" BorderThickness="0,0,0,1" Padding="16,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                                    <TextBlock Text="{Binding Brand}" FontSize="11" Foreground="#666"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <TextBlock Text="{Binding Stock, StringFormat=Stock: {0}}"
+                                                               FontSize="12" FontWeight="Bold" Foreground="#FF0000"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+
+                <!-- Recent Transactions -->
+                <Border Grid.Column="2" Style="{StaticResource StatCard}" Padding="0">
+                    <StackPanel>
+                        <Border Background="#0000FF" CornerRadius="12,12,0,0" Padding="16,12">
+                            <TextBlock Text="Recent Transactions" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                        </Border>
+                        <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" Style="{StaticResource CustomScrollViewer}">
+                            <ItemsControl ItemsSource="{Binding RecentTransactions}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#EEE" BorderThickness="0,0,0,1" Padding="16,12">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0">
+                                                    <TextBlock FontWeight="SemiBold" FontSize="13">
+                                                        <TextBlock.Text>
+                                                            <MultiBinding StringFormat="{}{0} {1}">
+                                                                <Binding Path="Customer.FirstName"/>
+                                                                <Binding Path="Customer.LastName"/>
+                                                            </MultiBinding>
+                                                        </TextBlock.Text>
+                                                    </TextBlock>
+                                                    <TextBlock Text="{Binding SaleDate, StringFormat=dd/MM/yyyy HH:mm}"
+                                                               FontSize="11" Foreground="#666"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <TextBlock Text="{Binding TotalAmount, StringFormat=₱ {0:N2}}"
+                                                               FontSize="13" FontWeight="Bold" Foreground="#00C206"/>
+                                                    <TextBlock Text="{Binding SaleType}" FontSize="10" Foreground="#666" HorizontalAlignment="Right"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Pending/Ongoing Services -->
+            <Border Style="{StaticResource StatCard}" Padding="0">
+                <StackPanel>
+                    <Border Background="#FFA500" CornerRadius="12,12,0,0" Padding="16,12">
+                        <TextBlock Text="Pending/Ongoing Services" FontSize="16" FontWeight="SemiBold" Foreground="White"/>
+                    </Border>
+                    <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto" Style="{StaticResource CustomScrollViewer}">
+                        <ItemsControl ItemsSource="{Binding PendingServiceJobs}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#EEE" BorderThickness="0,0,0,1" Padding="16,12">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Order ID -->
+                                            <TextBlock Grid.Column="0"
+                                                       Text="{Binding SaleID, StringFormat=S{0:000}}"
+                                                       FontWeight="Bold"
+                                                       FontSize="13"
+                                                       Margin="0,0,16,0"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Customer Info -->
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock FontWeight="SemiBold" FontSize="13">
+                                                    <TextBlock.Text>
+                                                        <MultiBinding StringFormat="{}{0} {1}">
+                                                            <Binding Path="Customer.FirstName"/>
+                                                            <Binding Path="Customer.LastName"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding Service.Name}" FontSize="11" Foreground="#666"/>
+                                            </StackPanel>
+
+                                            <!-- Status -->
+                                            <Border Grid.Column="2"
+                                                    VerticalAlignment="Center"
+                                                    Padding="8,4"
+                                                    Background="#190000FF"
+                                                    CornerRadius="8"
+                                                    Margin="8,0">
+                                                <TextBlock Text="{Binding Status}" FontSize="11" FontWeight="SemiBold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <Trigger Property="Text" Value="Pending">
+                                                                    <Setter Property="Foreground" Value="#0000FF"/>
+                                                                </Trigger>
+                                                                <Trigger Property="Text" Value="Ongoing">
+                                                                    <Setter Property="Foreground" Value="#FFA500"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+
+                                            <!-- Date -->
+                                            <TextBlock Grid.Column="3"
+                                                       Text="{Binding AppointmentDate, StringFormat=dd/MM/yyyy}"
+                                                       FontSize="12"
+                                                       Foreground="#666"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
