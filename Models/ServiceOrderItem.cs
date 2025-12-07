@@ -26,6 +26,10 @@ namespace gentech_services.Models
         [Column(TypeName = "decimal(10,2)")]
         public decimal TotalPrice { get; set; }
 
+        [Required]
+        [MaxLength(50)]
+        public string Status { get; set; } = "Pending";
+
         // Navigation properties
         [ForeignKey("ServiceOrderID")]
         public virtual ServiceOrder? ServiceOrder { get; set; }

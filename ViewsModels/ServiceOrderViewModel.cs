@@ -1,5 +1,6 @@
 ﻿using gentech_services.Models;
 using gentech_services.MVVM;
+using gentech_services.Services;
 using ProductServicesManagementSystem.Models;
 using System;
 using System.Collections.Generic;
@@ -13,40 +14,62 @@ using System.Windows.Controls;
 
 namespace gentech_services.ViewsModels
 {
-    // Grouped Service Order class for displaying multiple services per appointment
+    // Grouped Service Order class for displaying service orders
     public class GroupedServiceOrder : INotifyPropertyChanged
     {
-        public int SaleID { get; set; }
-        public Customer Customer { get; set; }
-        public DateTime AppointmentDate { get; set; }
-        public string PaymentMethod { get; set; }
-        public List<ServiceOrder> Orders { get; set; }
+        public int ServiceOrderID { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
+        public DateTime ScheduledAt { get; set; }
+        public ServiceOrder Order { get; set; }
 
-        // Computed status based on priority: Pending > Ongoing > Completed > Cancelled
+        // Calculated status based on service order items
         public string Status
         {
             get
             {
-                if (Orders == null || !Orders.Any()) return "Pending";
+                if (Order?.ServiceOrderItems == null || !Order.ServiceOrderItems.Any())
+                {
+                    return Order?.Status ?? "Pending";
+                }
 
-                // Priority 1: If ANY service is Pending
-                if (Orders.Any(o => o.Status?.ToLower() == "pending"))
-                    return "Pending";
+                // Get all service item statuses
+                var itemStatuses = Order.ServiceOrderItems.Select(item => item.Status).ToList();
 
-                // Priority 2: If ANY service is Ongoing
-                if (Orders.Any(o => o.Status?.ToLower() == "ongoing"))
+                // Apply complex status logic:
+                // 1. If at least one is ongoing → Ongoing
+                if (itemStatuses.Any(s => s == "Ongoing"))
+                {
                     return "Ongoing";
+                }
 
-                // Priority 3: If ALL services are Completed
-                if (Orders.All(o => o.Status?.ToLower() == "completed"))
+                // 2. All services completed → Completed
+                if (itemStatuses.All(s => s == "Completed"))
+                {
                     return "Completed";
+                }
 
-                // Priority 4: If ALL services are Cancelled
-                if (Orders.All(o => o.Status?.ToLower() == "cancelled"))
+                // 3. All services cancelled → Cancelled
+                if (itemStatuses.All(s => s == "Cancelled"))
+                {
                     return "Cancelled";
+                }
 
-                // Default fall`
-                return Orders.First()?.Status ?? "Pending";
+                // 4. Mix of completed and cancelled only → Completed
+                if (itemStatuses.All(s => s == "Completed" || s == "Cancelled") && itemStatuses.Any(s => s == "Completed"))
+                {
+                    return "Completed";
+                }
+
+                // 5. All services pending → Pending
+                if (itemStatuses.All(s => s == "Pending"))
+                {
+                    return "Pending";
+                }
+
+                // Default fallback
+                return Order.Status ?? "Pending";
             }
         }
 
@@ -54,16 +77,17 @@ namespace gentech_services.ViewsModels
         {
             get
             {
-                if (Orders == null || !Orders.Any()) return "";
+                if (Order?.ServiceOrderItems == null || !Order.ServiceOrderItems.Any()) return "";
 
-                if (Orders.Count <= 2)
+                var items = Order.ServiceOrderItems.ToList();
+                if (items.Count <= 2)
                 {
-                    return string.Join(", ", Orders.Select(o => o.Service?.Name));
+                    return string.Join(", ", items.Select(soi => soi.Service?.Name));
                 }
                 else
                 {
-                    var firstTwo = string.Join(", ", Orders.Take(2).Select(o => o.Service?.Name));
-                    return $"{firstTwo} +{Orders.Count - 2} more";
+                    var firstTwo = string.Join(", ", items.Take(2).Select(soi => soi.Service?.Name));
+                    return $"{firstTwo} +{items.Count - 2} more";
                 }
             }
         }
@@ -72,7 +96,7 @@ namespace gentech_services.ViewsModels
         {
             get
             {
-                return Orders?.Sum(o => o.Service?.Price ?? 0) ?? 0;
+                return Order?.ServiceOrderItems?.Sum(soi => soi.TotalPrice) ?? 0;
             }
         }
 
@@ -85,6 +109,10 @@ namespace gentech_services.ViewsModels
 
     internal class ServiceOrderViewModel : ViewModelBase
     {
+        private readonly ServiceOrderService _serviceOrderService;
+        private readonly ServiceService _serviceService;
+        private readonly UserService _userService;
+
         private Appointment currentAppointment;
         private ObservableCollection<ServiceOrder> serviceOrders;
         private ObservableCollection<ServiceOrder> allServiceOrders; // Store unfiltered list
@@ -284,8 +312,13 @@ namespace gentech_services.ViewsModels
         public RelayCommand ShowServiceSelectorCommand { get; private set; }
         public RelayCommand AddServiceToOrderCommand { get; private set; }
         public RelayCommand RemoveServiceFromOrderCommand { get; private set; }
-        public ServiceOrderViewModel()
+
+        public ServiceOrderViewModel(ServiceOrderService serviceOrderService, ServiceService serviceService, UserService userService)
         {
+            _serviceOrderService = serviceOrderService;
+            _serviceService = serviceService;
+            _userService = userService;
+
             currentAppointment = new Appointment();
             serviceOrders = new ObservableCollection<ServiceOrder>();
             allServiceOrders = new ObservableCollection<ServiceOrder>();
@@ -307,27 +340,47 @@ namespace gentech_services.ViewsModels
             ViewDetailsCommand = new RelayCommand(obj => ViewDetails(obj as ServiceOrder));
             EditCommand = new RelayCommand(obj => Edit(obj as ServiceOrder));
             EditAppointmentCommand = new RelayCommand(obj => EditAppointment(obj as ServiceOrder));
-            SetToOngoingCommand = new RelayCommand(obj => SetToOngoing(obj as ServiceOrder));
-            SetToCompletedCommand = new RelayCommand(obj => SetToCompleted(obj as ServiceOrder));
-            CancelAppointmentCommand = new RelayCommand(obj => CancelAppointment(obj as ServiceOrder));
+            SetToOngoingCommand = new RelayCommand(obj => SetToOngoing(obj as ServiceOrder), obj => obj is ServiceOrder);
+            SetToCompletedCommand = new RelayCommand(obj => SetToCompleted(obj as ServiceOrder), obj => obj is ServiceOrder);
+            CancelAppointmentCommand = new RelayCommand(obj => CancelAppointment(obj as ServiceOrder), obj => obj is ServiceOrder);
             RescheduleCommand = new RelayCommand(obj => Reschedule(obj as ServiceOrder));
-            DeleteCommand = new RelayCommand(obj => Delete(obj as ServiceOrder));
+            DeleteCommand = new RelayCommand(obj => Delete(obj as ServiceOrder), obj => obj is ServiceOrder);
             SetAppointmentCommand = new RelayCommand(obj => SetAppointment(), obj => CanSetAppointment());
             ClearFormCommand = new RelayCommand(obj => ClearForm());
             ShowServiceSelectorCommand = new RelayCommand(obj => ShowServiceSelector());
             AddServiceToOrderCommand = new RelayCommand(obj => AddServiceToOrder(obj as Service));
             RemoveServiceFromOrderCommand = new RelayCommand(obj => RemoveServiceFromOrder(obj as OrderServiceItem));
 
-            LoadData();
+            _ = LoadDataFromDatabase();
         }
+        // Inside ServiceOrderViewModel.cs
+
+        public async void HandleOrderUpdates(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. Persist changes to the database using the new service method
+                // (Assumes you implemented the public async Task<ServiceOrder> UpdateServiceOrderAsync(ServiceOrder order) overload)
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Refresh grouped orders to update the table status/grouping
+                // This is where the main grid sees the change.
+                RefreshGroupedOrders();
+            }
+            catch (Exception ex)
+            {
+                // Handle database or service error
+                MessageBox.Show($"Database Save Failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ViewDetails(ServiceOrder order)
         {
             if (order != null)
             {
                 SelectedOrder = order;
-                // Find all orders with the same SaleID (appointment)
-                var ordersForAppointment = allServiceOrders.Where(o => o.SaleID == order.SaleID).ToList();
-                ShowViewOrderModal?.Invoke(ordersForAppointment);
+                // In the new schema, each service order contains multiple service items
+                ShowViewOrderModal?.Invoke(new List<ServiceOrder> { order });
             }
         }
 
@@ -336,10 +389,9 @@ namespace gentech_services.ViewsModels
             if (order != null)
             {
                 SelectedOrder = order;
-                // Find all orders with the same SaleID (appointment)
-                var ordersForAppointment = allServiceOrders.Where(o => o.SaleID == order.SaleID).ToList();
+                // In the new schema, each service order contains multiple service items
                 var services = new ObservableCollection<Service>(selectableServices.Select(s => s.Service));
-                ShowEditOrderModal?.Invoke(ordersForAppointment, services, availableTechnicians);
+                ShowEditOrderModal?.Invoke(new List<ServiceOrder> { order }, services, availableTechnicians);
             }
         }
 
@@ -352,7 +404,7 @@ namespace gentech_services.ViewsModels
             }
         }
 
-        private void CancelAppointment(ServiceOrder order)
+        private async void CancelAppointment(ServiceOrder order)
         {
             if (order != null)
             {
@@ -367,36 +419,133 @@ namespace gentech_services.ViewsModels
                 }
 
                 var result = MessageBox.Show(
-                    $"Are you sure you want to cancel the appointment for {order.Customer.FirstName} {order.Customer.LastName}?\n\n" +
-                    $"Order ID: #S{order.SaleID:000}\n" +
-                    $"Service: {order.Service.Name}\n" +
-                    $"Date: {order.AppointmentDate:dd/MM/yyyy}",
+                    $"Are you sure you want to cancel this appointment?\n\n" +
+                    $"Order ID: S{order.ServiceOrderID:000}\n" +
+                    $"Customer: {order.FullName}\n" +
+                    $"Scheduled: {order.ScheduledAt:dd/MM/yyyy}",
                     "Cancel Appointment",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    order.Status = "Cancelled";
-
-                    // Force UI refresh
-                    var index = serviceOrders.IndexOf(order);
-                    if (index >= 0)
+                    try
                     {
-                        serviceOrders.RemoveAt(index);
-                        serviceOrders.Insert(index, order);
-                    }
+                        await _serviceOrderService.UpdateStatusAsync(order.ServiceOrderID, "Cancelled");
+                        order.Status = "Cancelled";
 
-                    MessageBox.Show(
-                        "Appointment cancelled successfully.",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                        // Refresh UI
+                        RefreshGroupedOrders();
+
+                        MessageBox.Show(
+                            "Appointment cancelled successfully.",
+                            "Success",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            $"Failed to cancel appointment: {ex.Message}",
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
                 }
             }
         }
 
-        private void SetToOngoing(ServiceOrder order)
+        // This method is assigned to modal.OnSaveChanges
+        private async void HandleServiceOrderUpdate(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. CRITICAL: Call the service to save the updated order to the DB
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Refresh the display to show the new status
+                RefreshGroupedOrders(); // Assuming this method rebuilds/updates the ObservableCollection bound to your grid
+            }
+            catch (Exception ex)
+            {
+                // Handle database or service error
+                MessageBox.Show($"Database Save Failed: {ex.Message}");
+            }
+        }
+
+        // Handle Edit Appointment Modal updates and persist to database
+        public async Task HandleEditAppointmentUpdate(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. Persist changes to the database
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Update local collections
+                var existingOrder = allServiceOrders.FirstOrDefault(o => o.ServiceOrderID == updatedOrder.ServiceOrderID);
+                if (existingOrder != null)
+                {
+                    // Update properties
+                    existingOrder.FullName = updatedOrder.FullName;
+                    existingOrder.Email = updatedOrder.Email;
+                    existingOrder.Phone = updatedOrder.Phone;
+                    existingOrder.ScheduledAt = updatedOrder.ScheduledAt;
+                    existingOrder.IssueNotes = updatedOrder.IssueNotes;
+                }
+
+                // 3. Refresh the display
+                RefreshGroupedOrders();
+
+                // 4. Show success message
+                MessageBox.Show(
+                    $"Appointment updated successfully!\n\n" +
+                    $"Order ID: S{updatedOrder.ServiceOrderID:000}\n" +
+                    $"Customer: {updatedOrder.FullName}\n" +
+                    $"Scheduled: {updatedOrder.ScheduledAt:dd/MM/yyyy}",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to update appointment: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        // Handle Edit Order Modal updates (status, technician) and persist to database
+        public async Task HandleEditOrderUpdate(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. Persist changes to the database
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Update local collections
+                var existingOrder = allServiceOrders.FirstOrDefault(o => o.ServiceOrderID == updatedOrder.ServiceOrderID);
+                if (existingOrder != null)
+                {
+                    // Update properties
+                    existingOrder.Status = updatedOrder.Status;
+                    existingOrder.Technician = updatedOrder.Technician;
+                }
+
+                // 3. Refresh the display
+                RefreshGroupedOrders();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to update order: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+        private async void SetToOngoing(ServiceOrder order)
         {
             if (order != null)
             {
@@ -432,27 +581,42 @@ namespace gentech_services.ViewsModels
 
                 var result = MessageBox.Show(
                     $"Start working on this order?\n\n" +
-                    $"Order ID: #S{order.SaleID:000}\n" +
-                    $"Customer: {order.Customer.FirstName} {order.Customer.LastName}\n" +
-                    $"Service: {order.Service.Name}",
+                    $"Order ID: S{order.ServiceOrderID:000}\n" +
+                    $"Customer: {order.FullName}\n" +
+                    $"Scheduled: {order.ScheduledAt:dd/MM/yyyy}",
                     "Set to Ongoing",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    order.Status = "Ongoing";
+                    try
+                    {
+                        await _serviceOrderService.UpdateStatusAsync(order.ServiceOrderID, "Ongoing");
+                        order.Status = "Ongoing";
 
-                    MessageBox.Show(
-                        "Order status updated to Ongoing.",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                        // Refresh UI
+                        RefreshGroupedOrders();
+
+                        MessageBox.Show(
+                            "Order status updated to Ongoing.",
+                            "Success",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            $"Failed to update order status: {ex.Message}",
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
                 }
             }
         }
 
-        private void SetToCompleted(ServiceOrder order)
+        private async void SetToCompleted(ServiceOrder order)
         {
             if (order != null)
             {
@@ -488,22 +652,37 @@ namespace gentech_services.ViewsModels
 
                 var result = MessageBox.Show(
                     $"Mark this order as completed?\n\n" +
-                    $"Order ID: #S{order.SaleID:000}\n" +
-                    $"Customer: {order.Customer.FirstName} {order.Customer.LastName}\n" +
-                    $"Service: {order.Service.Name}",
+                    $"Order ID: S{order.ServiceOrderID:000}\n" +
+                    $"Customer: {order.FullName}\n" +
+                    $"Scheduled: {order.ScheduledAt:dd/MM/yyyy}",
                     "Set to Completed",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    order.Status = "Completed";
+                    try
+                    {
+                        await _serviceOrderService.UpdateStatusAsync(order.ServiceOrderID, "Completed");
+                        order.Status = "Completed";
 
-                    MessageBox.Show(
-                        "Order marked as completed successfully.",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                        // Refresh UI
+                        RefreshGroupedOrders();
+
+                        MessageBox.Show(
+                            "Order marked as completed successfully.",
+                            "Success",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            $"Failed to update order status: {ex.Message}",
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
                 }
             }
         }
@@ -544,28 +723,45 @@ namespace gentech_services.ViewsModels
             }
         }
 
-        private void Delete(ServiceOrder order)
+        private async void Delete(ServiceOrder order)
         {
             if (order != null)
             {
                 var result = MessageBox.Show(
                     $"Are you sure you want to delete this order? This action cannot be undone.\n\n" +
-                    $"Order ID: #S{order.SaleID:000}\n" +
-                    $"Customer: {order.Customer.FirstName} {order.Customer.LastName}\n" +
-                    $"Service: {order.Service.Name}",
+                    $"Order ID: S{order.ServiceOrderID:000}\n" +
+                    $"Customer: {order.FullName}\n" +
+                    $"Scheduled: {order.ScheduledAt:dd/MM/yyyy}",
                     "Delete Order",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning);
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    allServiceOrders.Remove(order);
-                    serviceOrders.Remove(order);
-                    MessageBox.Show(
-                        "Order deleted successfully.",
-                        "Success",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    try
+                    {
+                        await _serviceOrderService.DeleteServiceOrderAsync(order.ServiceOrderID);
+
+                        allServiceOrders.Remove(order);
+                        serviceOrders.Remove(order);
+
+                        // Refresh UI
+                        RefreshGroupedOrders();
+
+                        MessageBox.Show(
+                            "Order deleted successfully.",
+                            "Success",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(
+                            $"Failed to delete order: {ex.Message}",
+                            "Error",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
                 }
             }
         }
@@ -579,9 +775,10 @@ namespace gentech_services.ViewsModels
                 filteredOrders = filteredOrders.Where(o => o.Status == SelectedStatusFilter);
             }
 
-            if (SelectedTechnicianFilter != null && SelectedTechnicianFilter.Name != "All Technicians")
+            if (SelectedTechnicianFilter != null && SelectedTechnicianFilter.FullName != "All Technicians")
             {
-                filteredOrders = filteredOrders.Where(o => o.Technician?.Name == SelectedTechnicianFilter.Name);
+                // Note: Technician assignment not implemented yet in new schema
+                // This filter will be implemented when technician assignment is added
             }
 
             serviceOrders.Clear();
@@ -598,15 +795,16 @@ namespace gentech_services.ViewsModels
         {
             groupedServiceOrders.Clear();
 
-            var grouped = serviceOrders.GroupBy(o => o.SaleID).Select(g => new GroupedServiceOrder
+            // Each service order is now a single entity in the new schema
+            var grouped = serviceOrders.Select(o => new GroupedServiceOrder
             {
-                SaleID = g.Key,
-                Customer = g.First().Customer,
-                AppointmentDate = g.First().AppointmentDate,
-                PaymentMethod = g.First().PaymentMethod,
-                Orders = g.ToList()
-                // Status is computed from Orders, no need to set it
-            }).OrderBy(g => g.SaleID);
+                ServiceOrderID = o.ServiceOrderID,
+                FullName = o.FullName,
+                Email = o.Email,
+                Phone = o.Phone,
+                ScheduledAt = o.ScheduledAt,
+                Order = o
+            }).OrderByDescending(g => g.ScheduledAt);
 
             foreach (var group in grouped)
             {
@@ -735,69 +933,65 @@ namespace gentech_services.ViewsModels
                    SelectedDate.HasValue;
         }
 
-        private void SetAppointment()
+        private async void SetAppointment()
         {
             if (!ValidateForm())
             {
                 return;
             }
 
-            // Split customer name into first and last name
-            string[] nameParts = CustomerName.Trim().Split(new[] { ' ' }, 2);
-            string firstName = nameParts[0];
-            string lastName = nameParts.Length > 1 ? nameParts[1] : "";
-
-            var customer = new Customer
+            try
             {
-                FirstName = firstName,
-                LastName = lastName,
-                Email = Email,
-                Phone = Phone,
-                CreatedAt = DateTime.Now
-            };
+                // Prepare service items with quantity and unit price
+                var serviceItems = OrderServices.Select(os => (
+                    ServiceID: os.Service.ServiceID,
+                    Quantity: 1,
+                    UnitPrice: os.Service.Price
+                )).ToList();
 
-            // Generate a unique SaleID for this appointment (same for all services)
-            int newSaleID = allServiceOrders.Any() ? allServiceOrders.Max(o => o.SaleID) + 1 : 1;
+                // Create service order in database
+                var createdOrder = await _serviceOrderService.CreateServiceOrderAsync(
+                    fullName: CustomerName.Trim(),
+                    email: Email.Trim(),
+                    phone: Phone.Trim(),
+                    scheduledAt: SelectedDate.Value,
+                    deviceDescription: null, // Can be added to UI later if needed
+                    issueNotes: IssueDescription,
+                    serviceItems: serviceItems
+                );
 
-            // Create service orders for each service with single technician
-            foreach (var orderServiceItem in OrderServices)
-            {
-                var serviceOrder = new ServiceOrder
-                {
-                    SaleID = newSaleID, // Same SaleID for all services in this appointment
-                    Customer = customer,
-                    Service = orderServiceItem.Service,
-                    AppointmentDate = SelectedDate.Value,
-                    Status = orderServiceItem.Status,
-                    PaymentMethod = "Not Set",
-                    Technician = SelectedTechnician == null || SelectedTechnician.Name == "All Technicians"
-                        ? new User { Name = "Unassigned" }
-                        : SelectedTechnician,
-                    IssueDescription = IssueDescription ?? "No description" // Use issue description from the appointment form
-                };
+                // Add to local collections
+                allServiceOrders.Add(createdOrder);
+                serviceOrders.Add(createdOrder);
 
-                allServiceOrders.Add(serviceOrder);
-                serviceOrders.Add(serviceOrder);
+                // Update grouped orders to refresh the table
+                UpdateGroupedOrders();
+
+                // Calculate total cost
+                decimal totalCost = createdOrder.ServiceOrderItems.Sum(soi => soi.TotalPrice);
+
+                // Show success message
+                MessageBox.Show($"Appointment created successfully!\n\n" +
+                               $"Order ID: S{createdOrder.ServiceOrderID:000}\n" +
+                               $"Customer: {CustomerName}\n" +
+                               $"Services: {createdOrder.ServiceOrderItems.Count}\n" +
+                               $"Total Cost: ₱{totalCost:N2}\n" +
+                               $"Date: {SelectedDate.Value:dd/MM/yyyy}",
+                               "Success",
+                               MessageBoxButton.OK,
+                               MessageBoxImage.Information);
+
+                // Clear form
+                ClearForm();
             }
-
-            // Update grouped orders to refresh the table
-            UpdateGroupedOrders();
-
-            // Calculate total cost
-            decimal totalCost = OrderServices.Sum(os => os.Service.Price);
-
-            // Show success message
-            MessageBox.Show($"Appointment created successfully!\n\n" +
-                           $"Customer: {CustomerName}\n" +
-                           $"Services: {OrderServices.Count}\n" +
-                           $"Total Cost: ₱{totalCost:N2}\n" +
-                           $"Date: {SelectedDate.Value:dd/MM/yyyy}",
-                           "Success",
-                           MessageBoxButton.OK,
-                           MessageBoxImage.Information);
-
-            // Clear form
-            ClearForm();
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to create appointment: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
 
         private void ShowServiceSelector()
@@ -903,222 +1097,64 @@ namespace gentech_services.ViewsModels
             DateError = string.Empty;
         }
 
-        private void LoadData()
+        private async Task LoadDataFromDatabase()
         {
-            User technician1 = new User{
-                Name = "Keith",
-                UserID = 1,
-                Email = "keith@gmail.com",
-                PasswordHash = "password123",
-                Role="Technician",
-                CreatedAt = DateTime.Now,
-            };
-
-            Service service1 = new Service {
-                ServiceID = 1,
-                Name = "Motherboard Repair",
-                Description = "Lorem Ipsum dolor set",
-                Price = 1500,
-                CreatedAt = DateTime.Now,
-                IsActive = true,
-                CategoryID = 1,
-                Category = new Category
+            try
+            {
+                // Load services from database
+                var services = await _serviceService.GetActiveServicesAsync();
+                selectableServices = new ObservableCollection<SelectableService>();
+                foreach (var service in services)
                 {
-                    CategoryID = 1,
-                    Name = "Repair",
-                    Type = "Repair"
-                }
-            };
-
-            Service service2 = new Service
-            {
-                ServiceID = 2,
-                Name = "RAM Upgrade",
-                Description = "Upgrade system RAM",
-                Price = 2000,
-                CreatedAt = DateTime.Now,
-                IsActive = true,
-                CategoryID = 2,
-                Category = new Category
-                {
-                    CategoryID = 2,
-                    Name = "Upgrade",
-                    Type = "Upgrade"
-                }
-            };
-
-            Service service3 = new Service
-            {
-                ServiceID = 3,
-                Name = "Virus Removal",
-                Description = "Remove malware and viruses",
-                Price = 800,
-                CreatedAt = DateTime.Now,
-                IsActive = true,
-                CategoryID = 3,
-                Category = new Category
-                {
-                    CategoryID = 3,
-                    Name = "Maintenance",
-                    Type = "Maintenance"
-                }
-            };
-
-            User technician2 = new User
-            {
-                Name = "M. Soriano",
-                UserID = 2,
-                Email = "msoriano@gmail.com",
-                PasswordHash = "password123",
-                Role = "Technician",
-                CreatedAt = DateTime.Now,
-            };
-
-            User technician3 = new User
-            {
-                Name = "J. Reyes",
-                UserID = 3,
-                Email = "jreyes@gmail.com",
-                PasswordHash = "password123",
-                Role = "Technician",
-                CreatedAt = DateTime.Now,
-            };
-
-            Service service4 = new Service
-            {
-                ServiceID = 4,
-                Name = "OS Install",
-                Description = "Operating system installation",
-                Price = 5999,
-                CreatedAt = DateTime.Now,
-                IsActive = true,
-                CategoryID = 4,
-                Category = new Category
-                {
-                    CategoryID = 4,
-                    Name = "Software & System Services",
-                    Type = "Software & System Services"
-                }
-            };
-
-            Service service5 = new Service
-            {
-                ServiceID = 5,
-                Name = "Hardware Diagnostics",
-                Description = "Complete hardware diagnostic",
-                Price = 1200,
-                CreatedAt = DateTime.Now,
-                IsActive = true,
-                CategoryID = 5,
-                Category = new Category
-                {
-                    CategoryID = 5,
-                    Name = "Hardware Services",
-                    Type = "Hardware Services"
-                }
-            };
-
-            var servicesList = new List<Service>
-            {
-                service1,
-                service2,
-                service3,
-                service4,
-                service5
-            };
-
-            // Create SelectableServices for checkbox selection
-            selectableServices = new ObservableCollection<SelectableService>();
-            foreach (var service in servicesList)
-            {
-                var selectableService = new SelectableService
-                {
-                    Service = service,
-                    IsSelected = false
-                };
-                selectableService.PropertyChanged += SelectableService_PropertyChanged;
-                selectableServices.Add(selectableService);
-            }
-
-            UpdateAvailableServicesToAdd();
-
-            availableTechnicians = new ObservableCollection<User>
-            {
-                new User { Name = "All Technicians" }, // Filter option
-                technician1,
-                technician2,
-                technician3
-            };
-            selectedTechnicianFilter = availableTechnicians[0]; 
-            OnPropertyChanged(nameof(AvailableTechnicians));
-
-            var random = new Random();
-            var statuses = new[] { "Pending", "Ongoing", "Completed", "Cancelled" };
-            var firstNames = new[] { "Nicole", "John", "Maria", "David", "Sarah", "Michael", "Emma", "James", "Olivia", "William" };
-            var lastNames = new[] { "Juntilla", "Smith", "Garcia", "Johnson", "Williams", "Brown", "Jones", "Miller", "Davis", "Martinez" };
-            var technicians = new[] { technician1, technician2, technician3 };
-            var services = new[] { service1, service2, service3 };
-            var paymentMethods = new[] { "Cash", "Credit Card", "GCash", "PayPal", "Bank Transfer" };
-
-            // Generate 15 appointments, some with multiple services
-            int appointmentId = 1;
-            for (int i = 1; i <= 15; i++)
-            {
-                var firstName = firstNames[random.Next(firstNames.Length)];
-                var lastName = lastNames[random.Next(lastNames.Length)];
-                var status = statuses[random.Next(statuses.Length)];
-                var daysOffset = random.Next(-10, 30);
-                var paymentMethod = paymentMethods[random.Next(paymentMethods.Length)];
-                var appointmentDate = DateTime.Now.AddDays(daysOffset);
-
-                var customer = new Customer
-                {
-                    FirstName = firstName,
-                    LastName = lastName,
-                    Email = $"{firstName.ToLower()}.{lastName.ToLower()}@email.com",
-                    Phone = $"09{random.Next(100000000, 999999999)}",
-                    CreatedAt = DateTime.Now.AddDays(-random.Next(1, 60))
-                };
-
-                // Randomly decide if this appointment has 1, 2, or 3 services
-                int serviceCount = random.Next(1, 4); // 1, 2, or 3 services
-                var selectedServices = new List<Service>();
-
-                // Select unique services for this appointment
-                while (selectedServices.Count < serviceCount)
-                {
-                    var service = servicesList[random.Next(servicesList.Count)];
-                    if (!selectedServices.Contains(service))
+                    var selectableService = new SelectableService
                     {
-                        selectedServices.Add(service);
-                    }
-                }
-
-                // Create service orders for each service in this appointment
-                foreach (var service in selectedServices)
-                {
-                    var order = new ServiceOrder
-                    {
-                        SaleID = appointmentId,
-                        AppointmentDate = appointmentDate,
-                        Status = status,
-                        Technician = status == "Pending" && random.Next(3) == 0
-                            ? new User { Name = "Unassigned" }
-                            : technicians[random.Next(technicians.Length)],
                         Service = service,
-                        PaymentMethod = paymentMethod,
-                        Customer = customer
+                        IsSelected = false
                     };
+                    selectableService.PropertyChanged += SelectableService_PropertyChanged;
+                    selectableServices.Add(selectableService);
+                }
+                OnPropertyChanged(nameof(SelectableServices));
 
+                UpdateAvailableServicesToAdd();
+
+                // Load all users and filter technicians
+                var allUsers = await _userService.GetAllUsersAsync();
+                var technicians = allUsers.Where(u => u.Role == "Technician" && u.IsActive).ToList();
+
+                availableTechnicians = new ObservableCollection<User>
+                {
+                    new User { FullName = "All Technicians", Username = "filter" } // Filter option
+                };
+                foreach (var tech in technicians)
+                {
+                    availableTechnicians.Add(tech);
+                }
+                selectedTechnicianFilter = availableTechnicians[0];
+                OnPropertyChanged(nameof(AvailableTechnicians));
+
+                // Load service orders from database
+                var orders = await _serviceOrderService.GetAllServiceOrdersAsync();
+                allServiceOrders.Clear();
+                serviceOrders.Clear();
+
+                foreach (var order in orders)
+                {
                     allServiceOrders.Add(order);
                     serviceOrders.Add(order);
                 }
 
-                appointmentId++;
+                // Initialize grouped orders
+                UpdateGroupedOrders();
             }
-
-            // Initialize grouped orders
-            UpdateGroupedOrders();
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to load data from database: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
     }
 }

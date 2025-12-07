@@ -38,7 +38,74 @@ namespace gentech_services.Views.UserControls
                 UserNameText.Text = currentUser.Name;
                 UserRoleText.Text = currentUser.Role;
                 UserInitialText.Text = AuthenticationService.Instance.GetUserInitial();
+
+                // Update menu visibility based on role
+                UpdateMenuVisibility();
             }
+        }
+
+        private void UpdateMenuVisibility()
+        {
+            var authService = AuthenticationService.Instance;
+
+            // Dashboard is visible to all
+            DashboardButton.Visibility = Visibility.Visible;
+
+            // Admin has access to everything
+            if (authService.IsAdmin())
+            {
+                ServicesButton.Visibility = Visibility.Visible;
+                ServiceManagementButton.Visibility = Visibility.Visible;
+                ServiceOrdersButton.Visibility = Visibility.Visible;
+                ProductsButton.Visibility = Visibility.Visible;
+                InventoryManagementButton.Visibility = Visibility.Visible;
+                POSButton.Visibility = Visibility.Visible;
+                ProductOrderHistoryButton.Visibility = Visibility.Visible;
+                InventoryLogButton.Visibility = Visibility.Visible;
+                UsersButton.Visibility = Visibility.Visible;
+                return;
+            }
+
+            // Staff access: Service management, Service Order, Inventory Management, POS, Product Order History
+            if (authService.IsStaff())
+            {
+                ServicesButton.Visibility = Visibility.Visible;
+                ServiceManagementButton.Visibility = Visibility.Visible;
+                ServiceOrdersButton.Visibility = Visibility.Visible;
+                ProductsButton.Visibility = Visibility.Visible;
+                InventoryManagementButton.Visibility = Visibility.Visible;
+                POSButton.Visibility = Visibility.Visible;
+                ProductOrderHistoryButton.Visibility = Visibility.Visible;
+                InventoryLogButton.Visibility = Visibility.Collapsed;
+                UsersButton.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // Technician access: Service Order only
+            if (authService.IsTechnician())
+            {
+                ServicesButton.Visibility = Visibility.Visible;
+                ServiceManagementButton.Visibility = Visibility.Collapsed;
+                ServiceOrdersButton.Visibility = Visibility.Visible;
+                ProductsButton.Visibility = Visibility.Collapsed;
+                InventoryManagementButton.Visibility = Visibility.Collapsed;
+                POSButton.Visibility = Visibility.Collapsed;
+                ProductOrderHistoryButton.Visibility = Visibility.Collapsed;
+                InventoryLogButton.Visibility = Visibility.Collapsed;
+                UsersButton.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            // Default: hide all except dashboard
+            ServicesButton.Visibility = Visibility.Collapsed;
+            ServiceManagementButton.Visibility = Visibility.Collapsed;
+            ServiceOrdersButton.Visibility = Visibility.Collapsed;
+            ProductsButton.Visibility = Visibility.Collapsed;
+            InventoryManagementButton.Visibility = Visibility.Collapsed;
+            POSButton.Visibility = Visibility.Collapsed;
+            ProductOrderHistoryButton.Visibility = Visibility.Collapsed;
+            InventoryLogButton.Visibility = Visibility.Collapsed;
+            UsersButton.Visibility = Visibility.Collapsed;
         }
         
 

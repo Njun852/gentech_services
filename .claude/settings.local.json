@@ -1,18 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet clean:*)",
-      "Bash(dotnet build:*)",
-      "Bash(dir:*)",
-      "Bash(Select-String -Pattern \"error|warning CS\")",
-      "Bash(Select-Object -First 20)",
-      "Bash(dotnet tool install:*)",
-      "Bash(dotnet tool update:*)",
-      "Bash(dotnet tool:*)",
-      "Bash(dotnet restore:*)",
-      "Bash(dotnet ef migrations:*)",
-      "Bash(Select-Object -First 50)",
-      "Bash(dotnet ef database update:*)"
+      "Bash(dotnet script:*)",
+      "Bash(dotnet run:*)",
+      "Bash(where:*)",
+      "Bash(Select-Object -First 5)",
+      "Bash(powershell -Command:*)",
+      "Bash(del InventoryManagementViewModel.cs)",
+      "Bash(ren:*)",
+      "Bash(Select-String -Pattern \"error|warning|Build succeeded|Build FAILED\")"
     ],
     "deny": [],
     "ask": []

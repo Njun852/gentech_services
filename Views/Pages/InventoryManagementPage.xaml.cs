@@ -4,8 +4,14 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using gentech_services.ViewsModels;
 using gentech_services.Models;
+using gentech_services.Services;
+using gentech_services.Repositories;
+using gentech_services.Data;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
+using System;
 
 namespace gentech_services.Views.Pages
 {
@@ -13,11 +19,26 @@ namespace gentech_services.Views.Pages
     {
         private InventoryManagementViewModel ViewModel => (InventoryManagementViewModel)DataContext;
         private ObservableCollection<ProductCategoryViewModel> productCategories;
+        private readonly CategoryService _categoryService;
+        private readonly ProductService _productService;
 
         public InventoryManagementPage()
         {
             InitializeComponent();
             DataContext = new InventoryManagementViewModel();
+
+            // Initialize services
+            var optionsBuilder = new DbContextOptionsBuilder<GentechDbContext>();
+            optionsBuilder.UseSqlite("Data Source=gentech.db");
+            var context = new GentechDbContext(optionsBuilder.Options);
+            var categoryRepository = new CategoryRepository(context);
+            var productRepository = new ProductRepository(context);
+            var inventoryLogRepository = new InventoryLogRepository(context);
+            var inventoryLogService = new InventoryLogService(inventoryLogRepository);
+
+            _categoryService = new CategoryService(categoryRepository);
+            _productService = new ProductService(productRepository, inventoryLogService);
+
             LoadProductCategories();
         }
 
@@ -93,56 +114,67 @@ namespace gentech_services.Views.Pages
         }
 
         // Product Category Management
-        private void LoadProductCategories()
+        private async void LoadProductCategories()
         {
-            productCategories = new ObservableCollection<ProductCategoryViewModel>
+            try
             {
-                new ProductCategoryViewModel { CategoryID = 1, Name = "Laptop", ProductsCount = 1 },
-                new ProductCategoryViewModel { CategoryID = 2, Name = "Electronics", ProductsCount = 1 },
-                new ProductCategoryViewModel { CategoryID = 3, Name = "Accessories", ProductsCount = 4 },
-                new ProductCategoryViewModel { CategoryID = 4, Name = "Parts", ProductsCount = 7 },
-                new ProductCategoryViewModel { CategoryID = 5, Name = "Tools", ProductsCount = 0 },
-                new ProductCategoryViewModel { CategoryID = 6, Name = "Software", ProductsCount = 0 }
-            };
+                var categories = await _categoryService.GetProductCategoriesAsync();
+                var allProducts = await _productService.GetActiveProductsAsync();
 
-            CategoriesItemsControl.ItemsSource = productCategories;
+                productCategories = new ObservableCollection<ProductCategoryViewModel>(
+                    categories.Select(c => new ProductCategoryViewModel
+                    {
+                        CategoryID = c.CategoryID,
+                        Name = c.Name,
+                        ProductsCount = allProducts.Count(p => p.CategoryID == c.CategoryID)
+                    })
+                );
 
-            // Initialize ComboBoxes in Add/Edit modals
-            RefreshCategoryComboBoxes();
+                CategoriesItemsControl.ItemsSource = productCategories;
+
+                // Initialize ComboBoxes in Add/Edit modals
+                RefreshCategoryComboBoxes();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load categories: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void AddProductCategory_Click(object sender, RoutedEventArgs e)
+        private async void AddProductCategory_Click(object sender, RoutedEventArgs e)
         {
-            string categoryName = NewProductCategoryTextBox.Text.Trim();
-
-            if (string.IsNullOrWhiteSpace(categoryName))
+            try
             {
-                MessageBox.Show("Please enter a category name.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                string categoryName = NewProductCategoryTextBox.Text.Trim();
+
+                if (string.IsNullOrWhiteSpace(categoryName))
+                {
+                    MessageBox.Show("Please enter a category name.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Create category in database
+                var category = await _categoryService.CreateCategoryAsync(categoryName, "Product");
+
+                var newCategory = new ProductCategoryViewModel
+                {
+                    CategoryID = category.CategoryID,
+                    Name = category.Name,
+                    ProductsCount = 0
+                };
+
+                productCategories.Add(newCategory);
+                NewProductCategoryTextBox.Text = string.Empty;
+
+                // Update ComboBoxes in Add/Edit modals
+                RefreshCategoryComboBoxes();
+
+                MessageBox.Show($"Category '{categoryName}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-
-            // Check if category already exists
-            if (productCategories.Any(c => c.Name.Equals(categoryName, System.StringComparison.OrdinalIgnoreCase)))
+            catch (Exception ex)
             {
-                MessageBox.Show("A category with this name already exists.", "Duplicate Category", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                MessageBox.Show($"Failed to add category: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
-            int newId = productCategories.Count > 0 ? productCategories.Max(c => c.CategoryID) + 1 : 1;
-            var newCategory = new ProductCategoryViewModel
-            {
-                CategoryID = newId,
-                Name = categoryName,
-                ProductsCount = 0
-            };
-
-            productCategories.Add(newCategory);
-            NewProductCategoryTextBox.Text = string.Empty;
-
-            // Update ComboBoxes in Add/Edit modals
-            RefreshCategoryComboBoxes();
-
-            MessageBox.Show($"Category '{categoryName}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void RenameProductCategory_Click(object sender, RoutedEventArgs e)
@@ -221,39 +253,44 @@ namespace gentech_services.Views.Pages
                 VerticalContentAlignment = VerticalAlignment.Center,
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
-            saveButton.Click += (s, args) =>
+            saveButton.Click += async (s, args) =>
             {
-                string newName = textBox.Text.Trim();
-                if (string.IsNullOrWhiteSpace(newName))
+                try
                 {
-                    MessageBox.Show("Category name cannot be empty.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+                    string newName = textBox.Text.Trim();
+                    if (string.IsNullOrWhiteSpace(newName))
+                    {
+                        MessageBox.Show("Category name cannot be empty.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
 
-                if (productCategories.Any(c => c.CategoryID != categoryId && c.Name.Equals(newName, System.StringComparison.OrdinalIgnoreCase)))
+                    string oldName = category.Name;
+
+                    // Update category in database
+                    await _categoryService.UpdateCategoryAsync(categoryId, newName, "Product");
+
+                    category.Name = newName;
+
+                    // Update all products that reference this category
+                    foreach (var product in ViewModel.Products.Where(p => p.CategoryName == oldName))
+                    {
+                        product.CategoryName = newName;
+                    }
+
+                    // Refresh products table to show updated category names
+                    var temp = ViewModel.Products;
+                    ViewModel.Products = null;
+                    ViewModel.Products = temp;
+
+                    // Update ComboBoxes in Add/Edit modals
+                    RefreshCategoryComboBoxes();
+
+                    inputDialog.Close();
+                }
+                catch (Exception ex)
                 {
-                    MessageBox.Show("A category with this name already exists.", "Duplicate Category", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
+                    MessageBox.Show($"Failed to update category: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-
-                string oldName = category.Name;
-                category.Name = newName;
-
-                // Update all products that reference this category
-                foreach (var product in ViewModel.Products.Where(p => p.CategoryName == oldName))
-                {
-                    product.CategoryName = newName;
-                }
-
-                // Refresh products table to show updated category names
-                var temp = ViewModel.Products;
-                ViewModel.Products = null;
-                ViewModel.Products = temp;
-
-                // Update ComboBoxes in Add/Edit modals
-                RefreshCategoryComboBoxes();
-
-                inputDialog.Close();
             };
 
             buttonPanel.Children.Add(cancelButton);
@@ -273,34 +310,44 @@ namespace gentech_services.Views.Pages
             inputDialog.ShowDialog();
         }
 
-        private void DeleteProductCategory_Click(object sender, RoutedEventArgs e)
+        private async void DeleteProductCategory_Click(object sender, RoutedEventArgs e)
         {
-            var button = sender as Button;
-            if (button?.Tag == null) return;
-
-            int categoryId = (int)button.Tag;
-            var category = productCategories.FirstOrDefault(c => c.CategoryID == categoryId);
-
-            if (category == null) return;
-
-            if (category.ProductsCount > 0)
+            try
             {
-                MessageBox.Show($"Cannot delete category '{category.Name}' because it has {category.ProductsCount} product(s) assigned to it.",
-                    "Cannot Delete", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                var button = sender as Button;
+                if (button?.Tag == null) return;
+
+                int categoryId = (int)button.Tag;
+                var category = productCategories.FirstOrDefault(c => c.CategoryID == categoryId);
+
+                if (category == null) return;
+
+                if (category.ProductsCount > 0)
+                {
+                    MessageBox.Show($"Cannot delete category '{category.Name}' because it has {category.ProductsCount} product(s) assigned to it.",
+                        "Cannot Delete", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var result = MessageBox.Show($"Are you sure you want to delete the category '{category.Name}'?",
+                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    // Delete from database
+                    await _categoryService.DeleteCategoryAsync(categoryId);
+
+                    productCategories.Remove(category);
+
+                    // Update ComboBoxes in Add/Edit modals
+                    RefreshCategoryComboBoxes();
+
+                    MessageBox.Show($"Category '{category.Name}' has been deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
-
-            var result = MessageBox.Show($"Are you sure you want to delete the category '{category.Name}'?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
+            catch (Exception ex)
             {
-                productCategories.Remove(category);
-
-                // Update ComboBoxes in Add/Edit modals
-                RefreshCategoryComboBoxes();
-
-                MessageBox.Show($"Category '{category.Name}' has been deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Failed to delete category: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

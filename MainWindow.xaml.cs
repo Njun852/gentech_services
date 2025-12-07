@@ -22,9 +22,6 @@ namespace gentech_services
         {
             InitializeComponent();
 
-            // Auto-login for testing purposes
-            AuthenticationService.Instance.Login("Admin", "1234");
-
             if (AuthenticationService.Instance.IsLoggedIn)
             {
                 ShowMainInterface();
@@ -86,6 +83,17 @@ namespace gentech_services
 
         private void NavigateToPage(string pageName)
         {
+            // Check if user has access to the requested page
+            if (!AuthenticationService.Instance.HasAccessToPage(pageName))
+            {
+                MessageBox.Show(
+                    "You do not have permission to access this page.",
+                    "Access Denied",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
             UserControl page = pageName switch
             {
                 "Dashboard" => new Views.Pages.DashboardPage(),

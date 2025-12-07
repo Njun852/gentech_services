@@ -34,7 +34,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
                     <ColumnDefinition Width="2.5*"/>
-                    <ColumnDefinition Width="1.5*"/>
                     <ColumnDefinition Width="1*"/>
                     <ColumnDefinition Width="1*"/>
                     <ColumnDefinition/>
@@ -44,9 +43,8 @@
                 <TextBlock Grid.Column="1" Text="NAME" TextWrapping="Wrap" 
                 TextAlignment="Center" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2" Text="USERNAME" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="3" Text="PIN" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="4" Text="ROLE" VerticalAlignment="Center"  TextAlignment="Center"/>
-                <TextBlock Grid.Column="5" Text="ACTION" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="3" Text="ROLE" VerticalAlignment="Center"  TextAlignment="Center"/>
+                <TextBlock Grid.Column="4" Text="ACTION" VerticalAlignment="Center"/>
             </Grid>
             <Border Grid.Row="1" CornerRadius="0,0,14,14" ClipToBounds="True">
                 <ScrollViewer Style="{StaticResource CustomScrollViewer}">
@@ -62,7 +60,6 @@
                                             <ColumnDefinition Width="1*"/>
                                             <ColumnDefinition Width="2.5*"/>
                                             <ColumnDefinition Width="1.5*"/>
-                                            <ColumnDefinition Width="1*"/>
                                             <ColumnDefinition Width="1*"/>
                                             <ColumnDefinition/>
                                         </Grid.ColumnDefinitions>
@@ -81,9 +78,8 @@
                                                 TextAlignment="Center" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="2" Text="Keithzzx" 
                                                 VerticalAlignment="Center" FontWeight="Bold"/>
-                                        <TextBlock Grid.Column="3" Text="2003" 
-                                                VerticalAlignment="Center" FontWeight="Bold"/>
-                                        <TextBlock Grid.Column="4" Text="Technician" 
+                                     
+                                        <TextBlock Grid.Column="3" Text="Technician" 
                                                 VerticalAlignment="Center"/>
                                    
                                         

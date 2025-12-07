@@ -5,6 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using gentech_services.Models;
+using gentech_services.Services;
+using gentech_services.Data;
+using gentech_services.Repositories;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace gentech_services.Views.Pages
 {
@@ -13,6 +18,8 @@ namespace gentech_services.Views.Pages
         public ObservableCollection<User> Users { get; set; }
         private ObservableCollection<User> allUsers;
         private User selectedUser;
+        private UserService _userService;
+        private GentechDbContext _dbContext;
 
         public string CurrentUserName { get; set; } = "Admin/Owner";
         public string CurrentUserRole { get; set; } = "Admin";
@@ -20,8 +27,44 @@ namespace gentech_services.Views.Pages
         public UserManagementPage()
         {
             InitializeComponent();
-            LoadSampleData();
+            InitializeDatabase();
             DataContext = this;
+        }
+
+        private async void InitializeDatabase()
+        {
+            try
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<GentechDbContext>();
+                optionsBuilder.UseSqlite("Data Source=gentech.db");
+
+                _dbContext = new GentechDbContext(optionsBuilder.Options);
+                await _dbContext.Database.EnsureCreatedAsync();
+
+                var userRepository = new UserRepository(_dbContext);
+                _userService = new UserService(userRepository);
+
+                await LoadUsersFromDatabase();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Database initialization error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task LoadUsersFromDatabase()
+        {
+            try
+            {
+                var users = await _userService.GetAllUsersAsync();
+                allUsers = new ObservableCollection<User>(users);
+                Users = new ObservableCollection<User>(users);
+                UsersItemsControl.ItemsSource = Users;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading users: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadSampleData()
@@ -235,7 +278,7 @@ namespace gentech_services.Views.Pages
             }
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             // Validate inputs
             if (string.IsNullOrWhiteSpace(FullNameTextBox.Text))
@@ -262,35 +305,32 @@ namespace gentech_services.Views.Pages
                 return;
             }
 
-            // Get next UserID
-            int nextID = allUsers.Count > 0 ? allUsers.Max(u => u.UserID) + 1 : 1;
-
-            // Create new user
-            var newUser = new User
+            try
             {
-                UserID = nextID,
-                Name = FullNameTextBox.Text.Trim(),
-                Username = UsernameTextBox.Text.Trim(),
-                PIN = PINTextBox.Text.Trim(),
-                Role = (RoleComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Staff",
-                IsActive = true,
-                Email = $"{UsernameTextBox.Text.Trim().ToLower()}@gentech.com",
-                PasswordHash = "hashed_password",
-                CreatedAt = DateTime.Now
-            };
+                // Create new user in database
+                var newUser = await _userService.CreateUserAsync(
+                    fullName: FullNameTextBox.Text.Trim(),
+                    username: UsernameTextBox.Text.Trim(),
+                    pin: PINTextBox.Text.Trim(),
+                    role: (RoleComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Staff"
+                );
 
-            // Add to collections
-            allUsers.Add(newUser);
-            Users.Add(newUser);
+                // Reload users from database
+                await LoadUsersFromDatabase();
 
-            // Refresh the display
-            UsersItemsControl.ItemsSource = null;
-            UsersItemsControl.ItemsSource = allUsers;
+                // Clear form
+                ClearForm();
 
-            // Clear form
-            ClearForm();
-
-            MessageBox.Show($"User '{newUser.Name}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"User '{newUser.FullName}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to create user: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
@@ -373,7 +413,7 @@ namespace gentech_services.Views.Pages
             }
         }
 
-        private void DeleteUser_Click(object sender, RoutedEventArgs e)
+        private async void DeleteUser_Click(object sender, RoutedEventArgs e)
         {
             UserActionPopup.IsOpen = false;
 
@@ -387,17 +427,23 @@ namespace gentech_services.Views.Pages
 
             if (result == MessageBoxResult.Yes)
             {
-                allUsers.Remove(selectedUser);
-                Users.Remove(selectedUser);
+                try
+                {
+                    await _userService.DeleteUserAsync(selectedUser.UserID);
 
-                // Refresh display
-                RefreshUsersList();
+                    // Reload users from database
+                    await LoadUsersFromDatabase();
 
-                MessageBox.Show(
-                    $"User '{selectedUser.Name}' has been deleted successfully.",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                    MessageBox.Show(
+                        $"User has been deleted successfully.",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete user: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -407,7 +453,7 @@ namespace gentech_services.Views.Pages
             ClearEditForm();
         }
 
-        private void SaveEditButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveEditButton_Click(object sender, RoutedEventArgs e)
         {
             if (selectedUser == null) return;
 
@@ -436,24 +482,38 @@ namespace gentech_services.Views.Pages
                 return;
             }
 
-            // Update user
-            selectedUser.Name = EditFullNameTextBox.Text.Trim();
-            selectedUser.Username = EditUsernameTextBox.Text.Trim();
-            selectedUser.PIN = EditPINTextBox.Text.Trim();
-            selectedUser.Role = (EditRoleComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? selectedUser.Role;
+            try
+            {
+                // Update user in database
+                await _userService.UpdateUserAsync(
+                    userId: selectedUser.UserID,
+                    fullName: EditFullNameTextBox.Text.Trim(),
+                    username: EditUsernameTextBox.Text.Trim(),
+                    pin: EditPINTextBox.Text.Trim(),
+                    role: (EditRoleComboBox.SelectedItem as ComboBoxItem)?.Content.ToString() ?? selectedUser.Role
+                );
 
-            // Refresh display
-            RefreshUsersList();
+                // Reload users from database
+                await LoadUsersFromDatabase();
 
-            // Close modal
-            EditModalOverlay.Visibility = Visibility.Collapsed;
-            ClearEditForm();
+                // Close modal
+                EditModalOverlay.Visibility = Visibility.Collapsed;
+                ClearEditForm();
 
-            MessageBox.Show(
-                $"User '{selectedUser.Name}' has been updated successfully.",
-                "Success",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                MessageBox.Show(
+                    $"User has been updated successfully.",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (InvalidOperationException ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to update user: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ClearEditForm()

@@ -76,6 +76,12 @@ namespace gentech_services.Views.UserControls
 
             var selectedCategory = ServiceCategoryComboBox.SelectedItem as Category;
 
+            if (selectedCategory == null)
+            {
+                MessageBox.Show("Invalid category selected. Please try again.", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             // Create new service
             var newService = new Service
             {

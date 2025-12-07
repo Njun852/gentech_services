@@ -2,12 +2,19 @@ using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 using gentech_services.MVVM;
+using gentech_services.Services;
+using gentech_services.Repositories;
+using gentech_services.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace gentech_services.ViewsModels
 {
     internal class InventoryLogViewModel : ViewModelBase
     {
+        private readonly InventoryLogService _inventoryLogService;
         private ObservableCollection<InventoryLogEntry> allInventoryLogs;
         private ObservableCollection<InventoryLogEntry> inventoryLogs;
         private string recordedByFilter;
@@ -77,107 +84,48 @@ namespace gentech_services.ViewsModels
 
         public InventoryLogViewModel()
         {
-            LoadSampleData();
+            // Initialize service
+            var optionsBuilder = new DbContextOptionsBuilder<GentechDbContext>();
+            optionsBuilder.UseSqlite("Data Source=gentech.db");
+            var context = new GentechDbContext(optionsBuilder.Options);
+            var inventoryLogRepository = new InventoryLogRepository(context);
+            _inventoryLogService = new InventoryLogService(inventoryLogRepository);
+
+            LoadData();
         }
 
-        private void LoadSampleData()
+        private async void LoadData()
         {
-            allInventoryLogs = new ObservableCollection<InventoryLogEntry>
+            try
             {
-                new InventoryLogEntry
-                {
-                    LogID = "LOG-001",
-                    ProductID = "P001",
-                    ProductName = "LENOVO LEGION 3",
-                    AmountChange = "+16",
-                    PreviousQty = 300,
-                    UpdatedQty = 316,
-                    Reason = "Sold",
-                    RecordedBy = "Keith",
-                    Timestamp = new DateTime(2025, 11, 11, 20, 0, 0),
-                    ChangeColor = "#79F98C" // Green for positive
-                },
-                new InventoryLogEntry
-                {
-                    LogID = "LOG-002",
-                    ProductID = "P001",
-                    ProductName = "LENOVO LEGION 3",
-                    AmountChange = "-5",
-                    PreviousQty = 300,
-                    UpdatedQty = 316,
-                    Reason = "Broken",
-                    RecordedBy = "Keith",
-                    Timestamp = new DateTime(2025, 11, 11, 20, 0, 0),
-                    ChangeColor = "#FF6586" // Red for negative
-                },
-                new InventoryLogEntry
-                {
-                    LogID = "LOG-003",
-                    ProductID = "P002",
-                    ProductName = "ASUS ROG STRIX",
-                    AmountChange = "-5",
-                    PreviousQty = 300,
-                    UpdatedQty = 295,
-                    Reason = "Allwel",
-                    RecordedBy = "John",
-                    Timestamp = new DateTime(2025, 11, 12, 10, 0, 0),
-                    ChangeColor = "#FF6586"
-                },
-                new InventoryLogEntry
-                {
-                    LogID = "LOG-004",
-                    ProductID = "P001",
-                    ProductName = "LENOVO LEGION 3",
-                    AmountChange = "+16",
-                    PreviousQty = 300,
-                    UpdatedQty = 295,
-                    Reason = "GI napanaw",
-                    RecordedBy = "Keith",
-                    Timestamp = new DateTime(2025, 11, 13, 20, 2, 22),
-                    ChangeColor = "#79F98C"
-                },
-                new InventoryLogEntry
-                {
-                    LogID = "LOG-005",
-                    ProductID = "P003",
-                    ProductName = "HP PAVILION",
-                    AmountChange = "-5",
-                    PreviousQty = 300,
-                    UpdatedQty = 295,
-                    Reason = "Reject",
-                    RecordedBy = "Sarah",
-                    Timestamp = new DateTime(2025, 11, 14, 14, 30, 0),
-                    ChangeColor = "#FF6586"
-                },
-                new InventoryLogEntry
-                {
-                    LogID = "LOG-006",
-                    ProductID = "P001",
-                    ProductName = "LENOVO LEGION 3",
-                    AmountChange = "-5",
-                    PreviousQty = 300,
-                    UpdatedQty = 295,
-                    Reason = "Defective",
-                    RecordedBy = "Keith",
-                    Timestamp = new DateTime(2025, 11, 15, 9, 0, 0),
-                    ChangeColor = "#FF6586"
-                },
-                new InventoryLogEntry
-                {
-                    LogID = "LOG-007",
-                    ProductID = "P002",
-                    ProductName = "ASUS ROG STRIX",
-                    AmountChange = "+16",
-                    PreviousQty = 300,
-                    UpdatedQty = 316,
-                    Reason = "Sold",
-                    RecordedBy = "John",
-                    Timestamp = new DateTime(2025, 11, 16, 16, 0, 0),
-                    ChangeColor = "#79F98C"
-                }
-            };
+                var dbLogs = await _inventoryLogService.GetAllLogsAsync();
 
-            InventoryLogs = new ObservableCollection<InventoryLogEntry>(allInventoryLogs);
+                allInventoryLogs = new ObservableCollection<InventoryLogEntry>(
+                    dbLogs.Select(log => new InventoryLogEntry
+                    {
+                        LogID = $"L{log.InventoryLogID:0000}",
+                        ProductID = log.Product?.SKU ?? "N/A",
+                        ProductName = log.Product?.Name ?? "Unknown Product",
+                        AmountChange = log.ChangeType == "Stock In"
+                            ? $"+{log.QuantityChanged}"
+                            : $"-{log.QuantityChanged}",
+                        PreviousQty = log.PreviousQuantity,
+                        UpdatedQty = log.NewQuantity,
+                        Reason = log.Reason ?? log.ChangeType,
+                        RecordedBy = log.User?.Username ?? "System",
+                        Timestamp = log.CreatedAt,
+                        ChangeColor = log.ChangeType == "Stock In" ? "#79F98C" : "#FF6586"
+                    })
+                );
+
+                InventoryLogs = new ObservableCollection<InventoryLogEntry>(allInventoryLogs);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load inventory logs: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                allInventoryLogs = new ObservableCollection<InventoryLogEntry>();
+                InventoryLogs = new ObservableCollection<InventoryLogEntry>();
+            }
         }
 
         private void ApplyFilters()

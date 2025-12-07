@@ -89,39 +89,85 @@ namespace gentech_services.Views.UserControls
             ModalOverlay.Visibility = Visibility.Visible;
         }
 
+        //public void ShowModal(System.Collections.Generic.List<ServiceOrder> orders, ObservableCollection<Service> availableServices, ObservableCollection<User> availableTechnicians)
+        //{
+        //    if (orders == null || orders.Count == 0) return;
+
+        //    currentOrder = orders[0];
+        //    this.availableServices = availableServices;
+        //    AvailableTechnicians = availableTechnicians;
+
+        //    // Set order ID
+        //    OrderIdText.Text = $"#S{orders[0].SaleID:000}";
+
+        //    // Populate services table with all services in the appointment
+        //    orderServices.Clear();
+        //    foreach (var order in orders)
+        //    {
+        //        if (order.Service != null)
+        //        {
+        //            orderServices.Add(new OrderServiceItem
+        //            {
+        //                Service = order.Service,
+        //                Status = order.Status,
+        //                Technician = order.Technician,
+        //                ServiceOrder = order
+        //            });
+        //        }
+        //    }
+        //    ServicesListView.ItemsSource = orderServices;
+
+        //    // Update total cost
+        //    UpdateTotalCost();
+
+        //    // Set selected technician from first order
+        //    SelectedTechnician = orders[0].Technician;
+
+        //    // Show the modal
+        //    ModalOverlay.Visibility = Visibility.Visible;
+        //}
+
         public void ShowModal(System.Collections.Generic.List<ServiceOrder> orders, ObservableCollection<Service> availableServices, ObservableCollection<User> availableTechnicians)
         {
             if (orders == null || orders.Count == 0) return;
 
+            // 1. Capture the main parent order
             currentOrder = orders[0];
             this.availableServices = availableServices;
             AvailableTechnicians = availableTechnicians;
 
-            // Set order ID
-            OrderIdText.Text = $"#S{orders[0].SaleID:000}";
+            // Set order ID using new schema
+            OrderIdText.Text = $"S{currentOrder.ServiceOrderID:000}";
 
-            // Populate services table with all services in the appointment
+            // Clear the UI list
             orderServices.Clear();
-            foreach (var order in orders)
+
+            // 2. Load service items from ServiceOrderItems collection
+            if (currentOrder.ServiceOrderItems != null && currentOrder.ServiceOrderItems.Any())
             {
-                if (order.Service != null)
+                foreach (var item in currentOrder.ServiceOrderItems)
                 {
-                    orderServices.Add(new OrderServiceItem
+                    if (item.Service != null)
                     {
-                        Service = order.Service,
-                        Status = order.Status,
-                        Technician = order.Technician,
-                        ServiceOrder = order
-                    });
+                        orderServices.Add(new OrderServiceItem
+                        {
+                            Service = item.Service,
+                            Status = currentOrder.Status,
+                            Technician = currentOrder.Technician,
+                            ServiceOrder = currentOrder // Reference to parent order
+                        });
+                    }
                 }
             }
+
+            // Bind the data
             ServicesListView.ItemsSource = orderServices;
 
             // Update total cost
             UpdateTotalCost();
 
-            // Set selected technician from first order
-            SelectedTechnician = orders[0].Technician;
+            // Set selected technician
+            SelectedTechnician = currentOrder.Technician;
 
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;
@@ -162,8 +208,18 @@ namespace gentech_services.Views.UserControls
                 {
                     serviceItem.Status = newStatus;
 
-                    // Auto-save changes
-                    AutoSaveChanges();
+                    // Update the corresponding ServiceOrderItem in the database
+                    if (currentOrder != null && currentOrder.ServiceOrderItems != null)
+                    {
+                        var dbItem = currentOrder.ServiceOrderItems.FirstOrDefault(i => i.ServiceID == serviceItem.Service.ServiceID);
+                        if (dbItem != null)
+                        {
+                            dbItem.Status = newStatus;
+                        }
+
+                        // Notify parent to save changes to database
+                        OnSaveChanges?.Invoke(currentOrder);
+                    }
                 }
             }
         }
@@ -182,7 +238,16 @@ namespace gentech_services.Views.UserControls
                 if (result == MessageBoxResult.Yes)
                 {
                     serviceItem.Status = "Cancelled";
-                    // Don't remove from list, just update status
+
+                    // Update the corresponding ServiceOrderItem in the database
+                    if (currentOrder != null && currentOrder.ServiceOrderItems != null)
+                    {
+                        var dbItem = currentOrder.ServiceOrderItems.FirstOrDefault(i => i.ServiceID == serviceItem.Service.ServiceID);
+                        if (dbItem != null)
+                        {
+                            dbItem.Status = "Cancelled";
+                        }
+                    }
 
                     // Auto-save changes
                     AutoSaveChanges();
@@ -198,31 +263,44 @@ namespace gentech_services.Views.UserControls
                 AutoSaveChanges();
             }
         }
-
+   
         private void AutoSaveChanges()
         {
             if (currentOrder == null) return;
 
-            // Update technician and status for each service order
-            foreach (var orderServiceItem in orderServices)
+            // Update technician if selected
+            if (SelectedTechnician != null && SelectedTechnician.Username != "filter")
             {
-                if (orderServiceItem.ServiceOrder != null)
-                {
-                    // Update technician if selected
-                    if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
-                    {
-                        orderServiceItem.ServiceOrder.Technician = SelectedTechnician;
-                        orderServiceItem.Technician = SelectedTechnician;
-                    }
-
-                    // Update status
-                    orderServiceItem.ServiceOrder.Status = orderServiceItem.Status;
-                }
+                currentOrder.Technician = SelectedTechnician;
             }
 
-            // Notify parent with first order (for compatibility)
+            // Notify parent to save changes to database
             OnSaveChanges?.Invoke(currentOrder);
         }
+        //private void AutoSaveChanges()
+        //{
+        //    if (currentOrder == null) return;
+
+        //    // Update technician and status for each service order
+        //    foreach (var orderServiceItem in orderServices)
+        //    {
+        //        if (orderServiceItem.ServiceOrder != null)
+        //        {
+        //            // Update technician if selected
+        //            if (SelectedTechnician != null && SelectedTechnician.Name != "All Technicians")
+        //            {
+        //                orderServiceItem.ServiceOrder.Technician = SelectedTechnician;
+        //                orderServiceItem.Technician = SelectedTechnician;
+        //            }
+
+        //            // Update status
+        //            orderServiceItem.ServiceOrder.Status = orderServiceItem.Status;
+        //        }
+        //    }
+
+        //    // Notify parent with first order (for compatibility)
+        //    OnSaveChanges?.Invoke(currentOrder);
+        //}
 
         private void SaveChanges_Click(object sender, RoutedEventArgs e)
         {
