@@ -22,8 +22,56 @@ namespace gentech_services.ViewsModels
         public string Email { get; set; }
         public string Phone { get; set; }
         public DateTime ScheduledAt { get; set; }
-        public string Status { get; set; }
         public ServiceOrder Order { get; set; }
+
+        // Calculated status based on service order items
+        public string Status
+        {
+            get
+            {
+                if (Order?.ServiceOrderItems == null || !Order.ServiceOrderItems.Any())
+                {
+                    return Order?.Status ?? "Pending";
+                }
+
+                // Get all service item statuses
+                var itemStatuses = Order.ServiceOrderItems.Select(item => item.Status).ToList();
+
+                // Apply complex status logic:
+                // 1. If at least one is ongoing → Ongoing
+                if (itemStatuses.Any(s => s == "Ongoing"))
+                {
+                    return "Ongoing";
+                }
+
+                // 2. All services completed → Completed
+                if (itemStatuses.All(s => s == "Completed"))
+                {
+                    return "Completed";
+                }
+
+                // 3. All services cancelled → Cancelled
+                if (itemStatuses.All(s => s == "Cancelled"))
+                {
+                    return "Cancelled";
+                }
+
+                // 4. Mix of completed and cancelled only → Completed
+                if (itemStatuses.All(s => s == "Completed" || s == "Cancelled") && itemStatuses.Any(s => s == "Completed"))
+                {
+                    return "Completed";
+                }
+
+                // 5. All services pending → Pending
+                if (itemStatuses.All(s => s == "Pending"))
+                {
+                    return "Pending";
+                }
+
+                // Default fallback
+                return Order.Status ?? "Pending";
+            }
+        }
 
         public string ServicesDisplay
         {
@@ -283,7 +331,7 @@ namespace gentech_services.ViewsModels
             {
                 "All Statuses",
                 "Pending",
-                "In Progress",
+                "Ongoing",
                 "Completed",
                 "Cancelled"
             };
@@ -305,6 +353,27 @@ namespace gentech_services.ViewsModels
 
             _ = LoadDataFromDatabase();
         }
+        // Inside ServiceOrderViewModel.cs
+
+        public async void HandleOrderUpdates(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. Persist changes to the database using the new service method
+                // (Assumes you implemented the public async Task<ServiceOrder> UpdateServiceOrderAsync(ServiceOrder order) overload)
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Refresh grouped orders to update the table status/grouping
+                // This is where the main grid sees the change.
+                RefreshGroupedOrders();
+            }
+            catch (Exception ex)
+            {
+                // Handle database or service error
+                MessageBox.Show($"Database Save Failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ViewDetails(ServiceOrder order)
         {
             if (order != null)
@@ -386,15 +455,105 @@ namespace gentech_services.ViewsModels
             }
         }
 
+        // This method is assigned to modal.OnSaveChanges
+        private async void HandleServiceOrderUpdate(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. CRITICAL: Call the service to save the updated order to the DB
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Refresh the display to show the new status
+                RefreshGroupedOrders(); // Assuming this method rebuilds/updates the ObservableCollection bound to your grid
+            }
+            catch (Exception ex)
+            {
+                // Handle database or service error
+                MessageBox.Show($"Database Save Failed: {ex.Message}");
+            }
+        }
+
+        // Handle Edit Appointment Modal updates and persist to database
+        public async Task HandleEditAppointmentUpdate(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. Persist changes to the database
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Update local collections
+                var existingOrder = allServiceOrders.FirstOrDefault(o => o.ServiceOrderID == updatedOrder.ServiceOrderID);
+                if (existingOrder != null)
+                {
+                    // Update properties
+                    existingOrder.FullName = updatedOrder.FullName;
+                    existingOrder.Email = updatedOrder.Email;
+                    existingOrder.Phone = updatedOrder.Phone;
+                    existingOrder.ScheduledAt = updatedOrder.ScheduledAt;
+                    existingOrder.IssueNotes = updatedOrder.IssueNotes;
+                }
+
+                // 3. Refresh the display
+                RefreshGroupedOrders();
+
+                // 4. Show success message
+                MessageBox.Show(
+                    $"Appointment updated successfully!\n\n" +
+                    $"Order ID: S{updatedOrder.ServiceOrderID:000}\n" +
+                    $"Customer: {updatedOrder.FullName}\n" +
+                    $"Scheduled: {updatedOrder.ScheduledAt:dd/MM/yyyy}",
+                    "Success",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to update appointment: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
+
+        // Handle Edit Order Modal updates (status, technician) and persist to database
+        public async Task HandleEditOrderUpdate(ServiceOrder updatedOrder)
+        {
+            try
+            {
+                // 1. Persist changes to the database
+                await _serviceOrderService.UpdateServiceOrderAsync(updatedOrder);
+
+                // 2. Update local collections
+                var existingOrder = allServiceOrders.FirstOrDefault(o => o.ServiceOrderID == updatedOrder.ServiceOrderID);
+                if (existingOrder != null)
+                {
+                    // Update properties
+                    existingOrder.Status = updatedOrder.Status;
+                    existingOrder.Technician = updatedOrder.Technician;
+                }
+
+                // 3. Refresh the display
+                RefreshGroupedOrders();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Failed to update order: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
+        }
         private async void SetToOngoing(ServiceOrder order)
         {
             if (order != null)
             {
-                if (order.Status == "In Progress")
+                if (order.Status == "Ongoing")
                 {
                     MessageBox.Show(
-                        "This order is already in progress.",
-                        "Already In Progress",
+                        "This order is already ongoing.",
+                        "Already Ongoing",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
                     return;
@@ -425,7 +584,7 @@ namespace gentech_services.ViewsModels
                     $"Order ID: S{order.ServiceOrderID:000}\n" +
                     $"Customer: {order.FullName}\n" +
                     $"Scheduled: {order.ScheduledAt:dd/MM/yyyy}",
-                    "Set to In Progress",
+                    "Set to Ongoing",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Question);
 
@@ -433,14 +592,14 @@ namespace gentech_services.ViewsModels
                 {
                     try
                     {
-                        await _serviceOrderService.UpdateStatusAsync(order.ServiceOrderID, "In Progress");
-                        order.Status = "In Progress";
+                        await _serviceOrderService.UpdateStatusAsync(order.ServiceOrderID, "Ongoing");
+                        order.Status = "Ongoing";
 
                         // Refresh UI
                         RefreshGroupedOrders();
 
                         MessageBox.Show(
-                            "Order status updated to In Progress.",
+                            "Order status updated to Ongoing.",
                             "Success",
                             MessageBoxButton.OK,
                             MessageBoxImage.Information);
@@ -474,7 +633,7 @@ namespace gentech_services.ViewsModels
                 if (order.Status == "Pending")
                 {
                     MessageBox.Show(
-                        "Cannot complete a pending order. Please set it to In Progress first.",
+                        "Cannot complete a pending order. Please set it to Ongoing first.",
                         "Action Not Allowed",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information);
@@ -644,7 +803,6 @@ namespace gentech_services.ViewsModels
                 Email = o.Email,
                 Phone = o.Phone,
                 ScheduledAt = o.ScheduledAt,
-                Status = o.Status,
                 Order = o
             }).OrderByDescending(g => g.ScheduledAt);
 

@@ -114,9 +114,10 @@ namespace gentech_services.Views.UserControls
             OrderIdText.Text = $"S{order.ServiceOrderID:000}";
             CreatedDateText.Text = $"Created: {order.CreatedAt:MM/dd/yyyy}";
 
-            // Set status
-            StatusText.Text = order.Status;
-            SetStatusBadgeColor(order.Status);
+            // Calculate and set overall status based on service items
+            string overallStatus = CalculateOverallStatus(order);
+            StatusText.Text = overallStatus;
+            SetStatusBadgeColor(overallStatus);
 
             // Customer details
             CustomerNameText.Text = order.FullName ?? "N/A";
@@ -141,7 +142,7 @@ namespace gentech_services.Views.UserControls
                             Margin = new Thickness(0, 0, 0, 6)
                         };
 
-                        // Status badge (all items share the same order status)
+                        // Status badge for individual service item
                         var statusBorder = new Border
                         {
                             CornerRadius = new CornerRadius(10),
@@ -152,13 +153,13 @@ namespace gentech_services.Views.UserControls
 
                         var statusTextBlock = new TextBlock
                         {
-                            Text = order.Status ?? "Pending",
+                            Text = item.Status ?? "Pending",
                             FontSize = 11,
                             FontWeight = FontWeights.SemiBold
                         };
 
-                        // Set status badge colors
-                        SetServiceStatusColors(statusBorder, statusTextBlock, order.Status);
+                        // Set status badge colors for this specific item
+                        SetServiceStatusColors(statusBorder, statusTextBlock, item.Status);
 
                         statusBorder.Child = statusTextBlock;
 
@@ -191,28 +192,50 @@ namespace gentech_services.Views.UserControls
             ModalOverlay.Visibility = Visibility.Visible;
         }
 
-        private string GetOverallStatus(System.Collections.Generic.List<ServiceOrder> orders)
+        private string CalculateOverallStatus(ServiceOrder order)
         {
-            if (orders == null || orders.Count == 0) return "Pending";
+            if (order?.ServiceOrderItems == null || !order.ServiceOrderItems.Any())
+            {
+                return order?.Status ?? "Pending";
+            }
 
-            // Priority 1: If ANY service is Pending
-            if (orders.Any(o => o.Status?.ToLower() == "pending"))
-                return "Pending";
+            // Get all service item statuses
+            var itemStatuses = order.ServiceOrderItems.Select(item => item.Status).ToList();
 
-            // Priority 2: If ANY service is In Progress
-            if (orders.Any(o => o.Status?.ToLower() == "in progress"))
-                return "In Progress";
+            // Apply complex status logic:
+            // 1. If at least one is ongoing → Ongoing
+            if (itemStatuses.Any(s => s?.ToLower() == "ongoing"))
+            {
+                return "Ongoing";
+            }
 
-            // Priority 3: If ALL services are Completed
-            if (orders.All(o => o.Status?.ToLower() == "completed"))
+            // 2. All services completed → Completed
+            if (itemStatuses.All(s => s?.ToLower() == "completed"))
+            {
                 return "Completed";
+            }
 
-            // Priority 4: If ALL services are Cancelled
-            if (orders.All(o => o.Status?.ToLower() == "cancelled"))
+            // 3. All services cancelled → Cancelled
+            if (itemStatuses.All(s => s?.ToLower() == "cancelled"))
+            {
                 return "Cancelled";
+            }
+
+            // 4. Mix of completed and cancelled only → Completed
+            if (itemStatuses.All(s => s?.ToLower() == "completed" || s?.ToLower() == "cancelled") &&
+                itemStatuses.Any(s => s?.ToLower() == "completed"))
+            {
+                return "Completed";
+            }
+
+            // 5. All services pending → Pending
+            if (itemStatuses.All(s => s?.ToLower() == "pending"))
+            {
+                return "Pending";
+            }
 
             // Default fallback
-            return orders.First()?.Status ?? "Pending";
+            return order.Status ?? "Pending";
         }
 
         private void SetStatusBadgeColor(string status)
@@ -231,7 +254,7 @@ namespace gentech_services.Views.UserControls
                     StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F0F0F0"));
                     StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
                     break;
-                case "in progress":
+                case "ongoing":
                     StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5F0FF"));
                     StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3366CC"));
                     break;
@@ -258,7 +281,7 @@ namespace gentech_services.Views.UserControls
                     border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F0F0F0"));
                     textBlock.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
                     break;
-                case "in progress":
+                case "ongoing":
                     border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5F0FF"));
                     textBlock.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3366CC"));
                     break;

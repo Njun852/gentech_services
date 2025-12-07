@@ -5,11 +5,20 @@ using System.Linq;
 using System.Windows;
 using gentech_services.MVVM;
 using gentech_services.Models;
+using gentech_services.Services;
+using gentech_services.Data;
+using gentech_services.Repositories;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace gentech_services.ViewsModels
 {
     internal class InventoryManagementViewModel : ViewModelBase
     {
+        private readonly ProductService _productService;
+        private readonly CategoryService _categoryService;
+        private readonly InventoryLogService _inventoryLogService;
+
         private ObservableCollection<ProductViewModel> products;
         private ObservableCollection<ProductViewModel> allProducts;
         private ProductViewModel selectedProduct;
@@ -458,234 +467,74 @@ namespace gentech_services.ViewsModels
 
         public InventoryManagementViewModel()
         {
+            // Initialize services
+            var optionsBuilder = new DbContextOptionsBuilder<GentechDbContext>();
+            optionsBuilder.UseSqlite("Data Source=gentech.db");
+            var context = new GentechDbContext(optionsBuilder.Options);
+
+            var categoryRepository = new CategoryRepository(context);
+            var productRepository = new ProductRepository(context);
+            var inventoryLogRepository = new InventoryLogRepository(context);
+
+            _categoryService = new CategoryService(categoryRepository);
+            _inventoryLogService = new InventoryLogService(inventoryLogRepository);
+            _productService = new ProductService(productRepository, _inventoryLogService);
+
+            // Initialize commands
             NewProductCommand = new RelayCommand(obj => OpenAddModal());
-            AddProductCommand = new RelayCommand(obj => AddProduct(), obj => CanAddProduct());
+            AddProductCommand = new RelayCommand(async obj => await AddProduct(), obj => CanAddProduct());
             CancelAddCommand = new RelayCommand(obj => CloseAddModal());
             EditProductCommand = new RelayCommand(obj => OpenEditModal(obj as ProductViewModel));
-            SaveEditCommand = new RelayCommand(obj => SaveEdit(), obj => CanSaveEdit());
+            SaveEditCommand = new RelayCommand(async obj => await SaveEdit(), obj => CanSaveEdit());
             ClearEditCommand = new RelayCommand(obj => ClearEditForm());
             CloseEditModalCommand = new RelayCommand(obj => CloseEditModal());
             ViewProductCommand = new RelayCommand(obj => OpenViewModal(obj as ProductViewModel));
             CloseViewModalCommand = new RelayCommand(obj => CloseViewModal());
             StockInCommand = new RelayCommand(obj => OpenStockInModal());
             StockOutCommand = new RelayCommand(obj => OpenStockOutModal());
-            AddStockCommand = new RelayCommand(obj => AddStock(), obj => CanAddStock());
+            AddStockCommand = new RelayCommand(async obj => await AddStock(), obj => CanAddStock());
             CancelStockInCommand = new RelayCommand(obj => CloseStockInModal());
-            RemoveStockCommand = new RelayCommand(obj => RemoveStock(), obj => CanRemoveStock());
+            RemoveStockCommand = new RelayCommand(async obj => await RemoveStock(), obj => CanRemoveStock());
             CancelStockOutCommand = new RelayCommand(obj => CloseStockOutModal());
-            DeleteProductCommand = new RelayCommand(obj => DeleteProduct(obj as ProductViewModel));
+            DeleteProductCommand = new RelayCommand(async obj => await DeleteProduct(obj as ProductViewModel));
 
-            LoadSampleData();
-            UpdateLowStockAlert();
+            // Load data from database
+            LoadData();
         }
 
-        private void LoadSampleData()
+        private async void LoadData()
         {
-            allProducts = new ObservableCollection<ProductViewModel>
+            try
             {
-                new ProductViewModel
-                {
-                    ProductID = 1,
-                    Name = "LENOVO LEGION 3",
-                    ProductCode = "P2512001",
-                    CategoryName = "LAPTOP",
-                    Price = 49999m,
-                    StockQuanity = 300,
-                    LowStockLevel = 10,
-                    IsActive = true,
-                    Description = "High Performing Laptop",
-                    CreatedAt = DateTime.Now.AddMonths(-6)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 2,
-                    Name = "Gaming Chair",
-                    ProductCode = "P2512002",
-                    CategoryName = "Accessories",
-                    Price = 15999m,
-                    StockQuanity = 8,
-                    LowStockLevel = 5,
-                    IsActive = true,
-                    Description = "Ergonomic gaming chair with lumbar support",
-                    CreatedAt = DateTime.Now.AddMonths(-5)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 3,
-                    Name = "GTX 7090",
-                    ProductCode = "P2512003",
-                    CategoryName = "Parts",
-                    Price = 89990m,
-                    StockQuanity = 5,
-                    LowStockLevel = 3,
-                    IsActive = true,
-                    Description = "High-end graphics card for gaming",
-                    CreatedAt = DateTime.Now.AddMonths(-4)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 4,
-                    Name = "Mechanical Keyboard RGB",
-                    ProductCode = "P2512004",
-                    CategoryName = "Accessories",
-                    Price = 8990m,
-                    StockQuanity = 45,
-                    LowStockLevel = 20,
-                    IsActive = true,
-                    Description = "RGB mechanical keyboard with blue switches",
-                    CreatedAt = DateTime.Now.AddMonths(-4)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 5,
-                    Name = "Wireless Gaming Mouse",
-                    ProductCode = "P2512005",
-                    CategoryName = "Accessories",
-                    Price = 3490m,
-                    StockQuanity = 60,
-                    LowStockLevel = 25,
-                    IsActive = true,
-                    Description = "Wireless gaming mouse with 16000 DPI",
-                    CreatedAt = DateTime.Now.AddMonths(-3)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 6,
-                    Name = "RAM DDR5 32GB Kit",
-                    ProductCode = "P2512006",
-                    CategoryName = "Parts",
-                    Price = 12990m,
-                    StockQuanity = 25,
-                    LowStockLevel = 10,
-                    IsActive = true,
-                    Description = "High-speed DDR5 RAM 32GB (2x16GB) kit",
-                    CreatedAt = DateTime.Now.AddMonths(-3)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 7,
-                    Name = "SSD NVMe 2TB",
-                    ProductCode = "P2512007",
-                    CategoryName = "Parts",
-                    Price = 10490m,
-                    StockQuanity = 18,
-                    LowStockLevel = 8,
-                    IsActive = true,
-                    Description = "2TB NVMe SSD with 7000MB/s read speed",
-                    CreatedAt = DateTime.Now.AddMonths(-2)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 8,
-                    Name = "27\" 4K Monitor",
-                    ProductCode = "P2512008",
-                    CategoryName = "Electronics",
-                    Price = 28990m,
-                    StockQuanity = 12,
-                    LowStockLevel = 5,
-                    IsActive = true,
-                    Description = "27-inch 4K IPS monitor with 144Hz",
-                    CreatedAt = DateTime.Now.AddMonths(-2)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 9,
-                    Name = "CPU Ryzen 9 7950X",
-                    ProductCode = "P2512009",
-                    CategoryName = "Parts",
-                    Price = 35990m,
-                    StockQuanity = 7,
-                    LowStockLevel = 4,
-                    IsActive = true,
-                    Description = "16-core 32-thread flagship processor",
-                    CreatedAt = DateTime.Now.AddMonths(-1)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 10,
-                    Name = "Motherboard X670E",
-                    ProductCode = "P2512010",
-                    CategoryName = "Parts",
-                    Price = 18990m,
-                    StockQuanity = 15,
-                    LowStockLevel = 8,
-                    IsActive = true,
-                    Description = "ATX motherboard for AMD Ryzen 7000 series",
-                    CreatedAt = DateTime.Now.AddMonths(-1)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 11,
-                    Name = "Power Supply 850W Gold",
-                    ProductCode = "P2512011",
-                    CategoryName = "Parts",
-                    Price = 7490m,
-                    StockQuanity = 22,
-                    LowStockLevel = 10,
-                    IsActive = true,
-                    Description = "850W 80+ Gold certified modular PSU",
-                    CreatedAt = DateTime.Now.AddDays(-25)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 12,
-                    Name = "PC Case Mid Tower",
-                    ProductCode = "P2512012",
-                    CategoryName = "Accessories",
-                    Price = 5990m,
-                    StockQuanity = 30,
-                    LowStockLevel = 15,
-                    IsActive = true,
-                    Description = "Mid tower case with tempered glass and RGB",
-                    CreatedAt = DateTime.Now.AddDays(-20)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 13,
-                    Name = "CPU Cooler AIO 360mm",
-                    ProductCode = "P2512013",
-                    CategoryName = "Parts",
-                    Price = 9990m,
-                    StockQuanity = 14,
-                    LowStockLevel = 6,
-                    IsActive = true,
-                    Description = "360mm AIO liquid cooler with RGB fans",
-                    CreatedAt = DateTime.Now.AddDays(-15)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 14,
-                    Name = "Webcam 4K",
-                    ProductCode = "P2512014",
-                    CategoryName = "Accessories",
-                    Price = 4990m,
-                    StockQuanity = 38,
-                    LowStockLevel = 20,
-                    IsActive = true,
-                    Description = "4K webcam with auto-focus and noise reduction",
-                    CreatedAt = DateTime.Now.AddDays(-10)
-                },
-                new ProductViewModel
-                {
-                    ProductID = 15,
-                    Name = "Headset 7.1 Surround",
-                    ProductCode = "P2512015",
-                    CategoryName = "Accessories",
-                    Price = 6490m,
-                    StockQuanity = 42,
-                    LowStockLevel = 20,
-                    IsActive = true,
-                    Description = "7.1 surround sound gaming headset",
-                    CreatedAt = DateTime.Now.AddDays(-5)
-                }
-            };
+                var dbProducts = await _productService.GetActiveProductsAsync();
 
-            Products = new ObservableCollection<ProductViewModel>(allProducts);
+                allProducts = new ObservableCollection<ProductViewModel>(
+                    dbProducts.Select(p => new ProductViewModel
+                    {
+                        ProductID = p.ProductID,
+                        Name = p.Name,
+                        ProductCode = p.SKU,
+                        CategoryName = p.Category?.Name ?? "Unknown",
+                        Price = p.Price,
+                        StockQuanity = p.StockQuantity,
+                        LowStockLevel = p.LowStockLevel,
+                        IsActive = p.IsActive,
+                        Description = p.Description ?? string.Empty,
+                        CreatedAt = p.CreatedAt
+                    })
+                );
+
+                Products = new ObservableCollection<ProductViewModel>(allProducts);
+                UpdateLowStockAlert();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load products: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void UpdateLowStockAlert()
         {
-            // Use each product's LowStockLevel threshold instead of hardcoded value
             var lowStock = allProducts.Where(p => p.StockQuanity <= p.LowStockLevel).ToList();
             LowStockProducts = new ObservableCollection<ProductViewModel>(lowStock);
             HasLowStockItems = lowStock.Any();
@@ -735,9 +584,8 @@ namespace gentech_services.ViewsModels
         {
             // Format: PYYMM XXX (e.g., P2512001)
             DateTime now = DateTime.Now;
-            string yearMonth = now.ToString("yyMM"); // e.g., "2512" for December 2025
+            string yearMonth = now.ToString("yyMM");
 
-            // Find the next sequential number for this month
             string prefix = $"P{yearMonth}";
             int maxSeq = 0;
 
@@ -754,7 +602,7 @@ namespace gentech_services.ViewsModels
             }
 
             int nextSeq = maxSeq + 1;
-            return $"{prefix}{nextSeq:000}"; // e.g., "P2512001"
+            return $"{prefix}{nextSeq:000}";
         }
 
         private bool CanAddProduct()
@@ -765,31 +613,67 @@ namespace gentech_services.ViewsModels
                    LowStockLevel.HasValue && LowStockLevel.Value >= 0;
         }
 
-        private void AddProduct()
+        private async Task AddProduct()
         {
-            int nextID = allProducts.Count > 0 ? allProducts.Max(p => p.ProductID) + 1 : 1;
-
-            var newProduct = new ProductViewModel
+            try
             {
-                ProductID = nextID,
-                Name = ProductName.Trim(),
-                ProductCode = GenerateProductCode(), // Auto-generate product code
-                CategoryName = SelectedCategory,
-                Price = Price.Value,
-                StockQuanity = 0, // Default stock quantity
-                LowStockLevel = LowStockLevel.Value,
-                IsActive = true,
-                Description = Description?.Trim() ?? string.Empty,
-                CreatedAt = DateTime.Now
-            };
+                var currentUser = AuthenticationService.Instance.CurrentUser;
+                if (currentUser == null)
+                {
+                    MessageBox.Show("User not logged in.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            allProducts.Add(newProduct);
-            Products.Add(newProduct);
-            UpdateLowStockAlert();
+                // Get category by name
+                var categories = await _categoryService.GetProductCategoriesAsync();
+                var category = categories.FirstOrDefault(c => c.Name == SelectedCategory);
 
-            MessageBox.Show($"Product '{newProduct.Name}' has been added successfully.\nProduct Code: {newProduct.ProductCode}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (category == null)
+                {
+                    MessageBox.Show("Selected category not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            CloseAddModal();
+                string sku = GenerateProductCode();
+
+                var product = await _productService.CreateProductAsync(
+                    ProductName.Trim(),
+                    Description?.Trim(),
+                    Price.Value,
+                    sku,
+                    0, // Initial stock
+                    LowStockLevel.Value,
+                    category.CategoryID,
+                    currentUser.UserID
+                );
+
+                var newProduct = new ProductViewModel
+                {
+                    ProductID = product.ProductID,
+                    Name = product.Name,
+                    ProductCode = product.SKU,
+                    CategoryName = category.Name,
+                    Price = product.Price,
+                    StockQuanity = product.StockQuantity,
+                    LowStockLevel = product.LowStockLevel,
+                    IsActive = product.IsActive,
+                    Description = product.Description ?? string.Empty,
+                    CreatedAt = product.CreatedAt
+                };
+
+                allProducts.Add(newProduct);
+                Products.Add(newProduct);
+                UpdateLowStockAlert();
+
+                MessageBox.Show($"Product '{newProduct.Name}' has been added successfully.\nProduct Code: {newProduct.ProductCode}",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                CloseAddModal();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to add product: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void OpenEditModal(ProductViewModel product)
@@ -799,7 +683,7 @@ namespace gentech_services.ViewsModels
             SelectedProduct = product;
 
             EditProductName = product.Name;
-            EditProductCode = product.ProductCode; // Read-only, just for display
+            EditProductCode = product.ProductCode;
             EditSelectedCategory = product.CategoryName;
             EditPrice = product.Price;
             EditLowStockLevel = product.LowStockLevel;
@@ -825,28 +709,54 @@ namespace gentech_services.ViewsModels
                    EditLowStockLevel.HasValue && EditLowStockLevel.Value >= 0;
         }
 
-        private void SaveEdit()
+        private async Task SaveEdit()
         {
-            if (SelectedProduct == null) return;
+            try
+            {
+                if (SelectedProduct == null) return;
 
-            SelectedProduct.Name = EditProductName.Trim();
-            // ProductCode is auto-generated and read-only, so we don't update it
-            SelectedProduct.Price = EditPrice.Value;
-            SelectedProduct.LowStockLevel = EditLowStockLevel.Value;
-            SelectedProduct.Description = EditDescription?.Trim() ?? string.Empty;
-            SelectedProduct.CategoryName = EditSelectedCategory ?? SelectedProduct.CategoryName;
+                // Get category by name
+                var categories = await _categoryService.GetProductCategoriesAsync();
+                var category = categories.FirstOrDefault(c => c.Name == EditSelectedCategory);
 
-            // Refresh the Products collection to trigger UI update
-            var temp = Products;
-            Products = null;
-            Products = temp;
+                if (category == null)
+                {
+                    MessageBox.Show("Selected category not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            UpdateLowStockAlert();
+                var updatedProduct = await _productService.UpdateProductAsync(
+                    SelectedProduct.ProductID,
+                    EditProductName.Trim(),
+                    EditDescription?.Trim(),
+                    EditPrice.Value,
+                    SelectedProduct.ProductCode,
+                    EditLowStockLevel.Value,
+                    category.CategoryID
+                );
 
-            MessageBox.Show($"Product '{SelectedProduct.Name}' has been updated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                SelectedProduct.Name = updatedProduct.Name;
+                SelectedProduct.Price = updatedProduct.Price;
+                SelectedProduct.LowStockLevel = updatedProduct.LowStockLevel;
+                SelectedProduct.Description = updatedProduct.Description ?? string.Empty;
+                SelectedProduct.CategoryName = category.Name;
 
-            IsEditModalVisible = false;
-            ClearEditForm();
+                var temp = Products;
+                Products = null;
+                Products = temp;
+
+                UpdateLowStockAlert();
+
+                MessageBox.Show($"Product '{SelectedProduct.Name}' has been updated successfully.",
+                    "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                IsEditModalVisible = false;
+                ClearEditForm();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to update product: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void OpenViewModal(ProductViewModel product)
@@ -878,7 +788,6 @@ namespace gentech_services.ViewsModels
         {
             if (SelectedProduct == null) return;
 
-            // Use the edited name if available, otherwise use the product's current name
             StockInProductName = !string.IsNullOrWhiteSpace(EditProductName) ? EditProductName : SelectedProduct.Name;
             StockInCurrentStock = SelectedProduct.StockQuanity;
             StockInQuantity = null;
@@ -899,30 +808,49 @@ namespace gentech_services.ViewsModels
             return StockInQuantity.HasValue && StockInQuantity.Value > 0;
         }
 
-        private void AddStock()
+        private async Task AddStock()
         {
-            if (SelectedProduct == null || !StockInQuantity.HasValue) return;
+            try
+            {
+                if (SelectedProduct == null || !StockInQuantity.HasValue) return;
 
-            SelectedProduct.StockQuanity += StockInQuantity.Value;
+                var currentUser = AuthenticationService.Instance.CurrentUser;
+                if (currentUser == null)
+                {
+                    MessageBox.Show("User not logged in.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            // Refresh the Products collection to trigger UI update
-            var temp = Products;
-            Products = null;
-            Products = temp;
+                var updatedProduct = await _productService.StockInAsync(
+                    SelectedProduct.ProductID,
+                    StockInQuantity.Value,
+                    currentUser.UserID,
+                    StockInReason
+                );
 
-            UpdateLowStockAlert();
+                SelectedProduct.StockQuanity = updatedProduct.StockQuantity;
 
-            MessageBox.Show($"Added {StockInQuantity.Value} units to '{SelectedProduct.Name}'. New stock: {SelectedProduct.StockQuanity}",
-                "Stock Added", MessageBoxButton.OK, MessageBoxImage.Information);
+                var temp = Products;
+                Products = null;
+                Products = temp;
 
-            CloseStockInModal();
+                UpdateLowStockAlert();
+
+                MessageBox.Show($"Added {StockInQuantity.Value} units to '{SelectedProduct.Name}'. New stock: {SelectedProduct.StockQuanity}",
+                    "Stock Added", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                CloseStockInModal();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to add stock: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void OpenStockOutModal()
         {
             if (SelectedProduct == null) return;
 
-            // Use the edited name if available, otherwise use the product's current name
             StockOutProductName = !string.IsNullOrWhiteSpace(EditProductName) ? EditProductName : SelectedProduct.Name;
             StockOutCurrentStock = SelectedProduct.StockQuanity;
             StockOutQuantity = null;
@@ -943,59 +871,77 @@ namespace gentech_services.ViewsModels
             return StockOutQuantity.HasValue && StockOutQuantity.Value > 0;
         }
 
-        private void RemoveStock()
+        private async Task RemoveStock()
         {
-            if (SelectedProduct == null || !StockOutQuantity.HasValue) return;
-
-            // Check if there's enough stock to remove
-            if (SelectedProduct.StockQuanity < StockOutQuantity.Value)
+            try
             {
-                MessageBox.Show($"Cannot remove {StockOutQuantity.Value} units. Only {SelectedProduct.StockQuanity} units available.",
-                    "Insufficient Stock", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
+                if (SelectedProduct == null || !StockOutQuantity.HasValue) return;
 
-            SelectedProduct.StockQuanity -= StockOutQuantity.Value;
+                var currentUser = AuthenticationService.Instance.CurrentUser;
+                if (currentUser == null)
+                {
+                    MessageBox.Show("User not logged in.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
 
-            // Refresh the Products collection to trigger UI update
-            var temp = Products;
-            Products = null;
-            Products = temp;
+                var updatedProduct = await _productService.StockOutAsync(
+                    SelectedProduct.ProductID,
+                    StockOutQuantity.Value,
+                    currentUser.UserID,
+                    StockOutReason
+                );
 
-            UpdateLowStockAlert();
+                SelectedProduct.StockQuanity = updatedProduct.StockQuantity;
 
-            MessageBox.Show($"Removed {StockOutQuantity.Value} units from '{SelectedProduct.Name}'. New stock: {SelectedProduct.StockQuanity}",
-                "Stock Removed", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            CloseStockOutModal();
-        }
-
-        private void DeleteProduct(ProductViewModel product)
-        {
-            if (product == null) return;
-
-            // Check if product has stock
-            if (product.StockQuanity > 0)
-            {
-                MessageBox.Show($"Cannot delete '{product.Name}'. Product has {product.StockQuanity} units in stock.\nPlease remove all stock before deleting.",
-                    "Cannot Delete Product", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            // Confirm deletion
-            var result = MessageBox.Show($"Are you sure you want to delete '{product.Name}'?\nThis action cannot be undone.",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                // Remove from both collections
-                allProducts.Remove(product);
-                Products.Remove(product);
-
-                MessageBox.Show($"Product '{product.Name}' has been deleted successfully.",
-                    "Product Deleted", MessageBoxButton.OK, MessageBoxImage.Information);
+                var temp = Products;
+                Products = null;
+                Products = temp;
 
                 UpdateLowStockAlert();
+
+                MessageBox.Show($"Removed {StockOutQuantity.Value} units from '{SelectedProduct.Name}'. New stock: {SelectedProduct.StockQuanity}",
+                    "Stock Removed", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                CloseStockOutModal();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to remove stock: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task DeleteProduct(ProductViewModel product)
+        {
+            try
+            {
+                if (product == null) return;
+
+                if (product.StockQuanity > 0)
+                {
+                    MessageBox.Show($"Cannot delete '{product.Name}'. Product has {product.StockQuanity} units in stock.\nPlease remove all stock before deleting.",
+                        "Cannot Delete Product", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var result = MessageBox.Show($"Are you sure you want to delete '{product.Name}'?\nThis action cannot be undone.",
+                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    await _productService.DeleteProductAsync(product.ProductID);
+
+                    allProducts.Remove(product);
+                    Products.Remove(product);
+
+                    MessageBox.Show($"Product '{product.Name}' has been deleted successfully.",
+                        "Product Deleted", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    UpdateLowStockAlert();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to delete product: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

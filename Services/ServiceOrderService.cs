@@ -18,6 +18,50 @@ namespace gentech_services.Services
             _serviceRepository = serviceRepository;
         }
 
+        public async Task<ServiceOrder> UpdateServiceOrderAsync(ServiceOrder serviceOrder)
+        {
+            if (serviceOrder == null)
+                throw new ArgumentNullException(nameof(serviceOrder), "Service order object cannot be null.");
+
+            // You might want to re-fetch the order from the DB first to ensure you have the latest state,
+            // especially if you are only updating a few properties in the ViewModel/Modal.
+            var existingOrder = await _serviceOrderRepository.GetByIdAsync(serviceOrder.ServiceOrderID);
+            if (existingOrder == null)
+                throw new InvalidOperationException($"Service order with ID {serviceOrder.ServiceOrderID} not found for update.");
+
+            // **CRITICAL SYNCHRONIZATION POINT**
+            // Update the properties of the existing entity with the values from the passed object.
+            // This is the simplest way to update all fields changed in the UI,
+            // including customer details, status, and technician.
+
+            existingOrder.FullName = serviceOrder.FullName;
+            existingOrder.Email = serviceOrder.Email;
+            existingOrder.Phone = serviceOrder.Phone;
+            existingOrder.ScheduledAt = serviceOrder.ScheduledAt;
+            existingOrder.Status = serviceOrder.Status;
+            existingOrder.DeviceDescription = serviceOrder.DeviceDescription;
+            existingOrder.IssueNotes = serviceOrder.IssueNotes;
+            existingOrder.Technician = serviceOrder.Technician; // Assuming ServiceOrder has a Technician property
+
+            // Update ServiceOrderItems statuses if they exist
+            if (serviceOrder.ServiceOrderItems != null && existingOrder.ServiceOrderItems != null)
+            {
+                foreach (var updatedItem in serviceOrder.ServiceOrderItems)
+                {
+                    var existingItem = existingOrder.ServiceOrderItems
+                        .FirstOrDefault(i => i.ServiceOrderItemID == updatedItem.ServiceOrderItemID);
+
+                    if (existingItem != null)
+                    {
+                        existingItem.Status = updatedItem.Status;
+                    }
+                }
+            }
+
+            await _serviceOrderRepository.UpdateAsync(existingOrder);
+            return existingOrder;
+        }
+
         public async Task<ServiceOrder?> GetByIdAsync(int serviceOrderId)
         {
             return await _serviceOrderRepository.GetByIdAsync(serviceOrderId);
@@ -94,7 +138,8 @@ namespace gentech_services.Services
                     ServiceID = item.ServiceID,
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
-                    TotalPrice = totalPrice
+                    TotalPrice = totalPrice,
+                    Status = "Pending"
                 });
             }
 
@@ -134,7 +179,7 @@ namespace gentech_services.Services
                 throw new InvalidOperationException($"Service order with ID {serviceOrderId} not found.");
 
             // Validate status
-            var validStatuses = new[] { "Pending", "In Progress", "Completed", "Cancelled" };
+            var validStatuses = new[] { "Pending", "Ongoing", "Completed", "Cancelled" };
             if (!validStatuses.Contains(status))
                 throw new InvalidOperationException($"Invalid status: {status}");
 

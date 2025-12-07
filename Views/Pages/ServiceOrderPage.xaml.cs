@@ -63,18 +63,10 @@ namespace gentech_services.Views.Pages
             };
 
             // Wire up save changes callback for Edit Order Modal
-            EditOrderModal.OnSaveChanges = (updatedOrder) =>
+            EditOrderModal.OnSaveChanges = async (updatedOrder) =>
             {
-                // Force UI refresh by removing and re-adding the item
-                var index = viewModel.ServiceOrders.IndexOf(updatedOrder);
-                if (index >= 0)
-                {
-                    viewModel.ServiceOrders.RemoveAt(index);
-                    viewModel.ServiceOrders.Insert(index, updatedOrder);
-                }
-
-                // Refresh grouped orders to update the table status
-                viewModel.RefreshGroupedOrders();
+                // Use the ViewModel's method to handle the update and persist to database
+                await viewModel.HandleEditOrderUpdate(updatedOrder);
             };
 
             // Wire up callback for when a new service is added to an appointment
@@ -85,18 +77,10 @@ namespace gentech_services.Views.Pages
             };
 
             // Wire up save changes callback for Edit Appointment Modal
-            EditAppointmentModal.OnSaveChanges = (updatedOrder) =>
+            EditAppointmentModal.OnSaveChanges = async (updatedOrder) =>
             {
-                // Force UI refresh by removing and re-adding the item
-                var index = viewModel.ServiceOrders.IndexOf(updatedOrder);
-                if (index >= 0)
-                {
-                    viewModel.ServiceOrders.RemoveAt(index);
-                    viewModel.ServiceOrders.Insert(index, updatedOrder);
-                }
-
-                // Refresh grouped orders to update the table
-                viewModel.RefreshGroupedOrders();
+                // Use the ViewModel's method to handle the update and persist to database
+                await viewModel.HandleEditAppointmentUpdate(updatedOrder);
             };
 
             // Subscribe to SelectableServices collection changes
@@ -162,5 +146,7 @@ namespace gentech_services.Views.Pages
         {
             // Popup closed
         }
+
+
     }
 }
