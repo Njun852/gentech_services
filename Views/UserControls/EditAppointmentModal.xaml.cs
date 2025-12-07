@@ -25,21 +25,18 @@ namespace gentech_services.Views.UserControls
             currentOrder = order;
 
             // Set order ID
-            OrderIdText.Text = $"#S{order.SaleID:000}";
+            OrderIdText.Text = $"S{order.ServiceOrderID:000}";
 
             // Set customer information
-            if (order.Customer != null)
-            {
-                CustomerNameTextBox.Text = $"{order.Customer.FirstName} {order.Customer.LastName}";
-                EmailTextBox.Text = order.Customer.Email ?? "";
-                PhoneTextBox.Text = order.Customer.Phone ?? "";
-            }
+            CustomerNameTextBox.Text = order.FullName ?? "";
+            EmailTextBox.Text = order.Email ?? "";
+            PhoneTextBox.Text = order.Phone ?? "";
 
             // Set appointment date
-            AppointmentDatePicker.SelectedDate = order.AppointmentDate;
+            AppointmentDatePicker.SelectedDate = order.ScheduledAt;
 
             // Set issue description
-            IssueDescriptionTextBox.Text = order.IssueDescription ?? "";
+            IssueDescriptionTextBox.Text = order.IssueNotes ?? "";
 
             // Clear any validation errors
             ClearAllValidationErrors();
@@ -59,32 +56,18 @@ namespace gentech_services.Views.UserControls
             }
 
             // Update customer information
-            if (currentOrder.Customer != null)
-            {
-                var fullName = CustomerNameTextBox.Text.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                if (fullName.Length >= 2)
-                {
-                    currentOrder.Customer.FirstName = fullName[0];
-                    currentOrder.Customer.LastName = string.Join(" ", fullName.Skip(1));
-                }
-                else if (fullName.Length == 1)
-                {
-                    currentOrder.Customer.FirstName = fullName[0];
-                    currentOrder.Customer.LastName = "";
-                }
-
-                currentOrder.Customer.Email = EmailTextBox.Text.Trim();
-                currentOrder.Customer.Phone = PhoneTextBox.Text.Trim();
-            }
+            currentOrder.FullName = CustomerNameTextBox.Text.Trim();
+            currentOrder.Email = EmailTextBox.Text.Trim();
+            currentOrder.Phone = PhoneTextBox.Text.Trim();
 
             // Update appointment date
             if (AppointmentDatePicker.SelectedDate.HasValue)
             {
-                currentOrder.AppointmentDate = AppointmentDatePicker.SelectedDate.Value;
+                currentOrder.ScheduledAt = AppointmentDatePicker.SelectedDate.Value;
             }
 
             // Update issue description
-            currentOrder.IssueDescription = IssueDescriptionTextBox.Text.Trim();
+            currentOrder.IssueNotes = IssueDescriptionTextBox.Text.Trim();
 
             // Notify parent to refresh the UI
             OnSaveChanges?.Invoke(currentOrder);

@@ -12,7 +12,8 @@
       "Bash(dotnet restore:*)",
       "Bash(dotnet ef migrations:*)",
       "Bash(Select-Object -First 50)",
-      "Bash(dotnet ef database update:*)"
+      "Bash(dotnet ef database update:*)",
+      "Bash(Select-String -Pattern \"error|Build succeeded|Build FAILED\")"
     ],
     "deny": [],
     "ask": []

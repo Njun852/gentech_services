@@ -42,7 +42,7 @@
                       FontSize="11"
                       ItemsSource="{Binding AvailableTechnicians}"
                       SelectedItem="{Binding SelectedTechnicianFilter}"
-                      DisplayMemberPath="Name"/>
+                      DisplayMemberPath="FullName"/>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -105,23 +105,17 @@
                                         </Style>
                                     </Grid.Resources>
 
-                                    <TextBlock Grid.Column="0" Text="{Binding SaleID, StringFormat=S{0:000}}"
+                                    <TextBlock Grid.Column="0" Text="{Binding ServiceOrderID, StringFormat=S{0:000}}"
                                VerticalAlignment="Center" FontWeight="Bold"/>
-                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="Bold">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0} {1}">
-                                                <Binding Path="Customer.FirstName"/>
-                                                <Binding Path="Customer.LastName"/>
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
+                                    <TextBlock Grid.Column="1" Text="{Binding FullName}"
+                               VerticalAlignment="Center" FontWeight="Bold"/>
                                     <TextBlock Grid.Column="2" Text="{Binding ServicesDisplay}"
                                TextWrapping="Wrap" FontWeight="Bold"
                                TextAlignment="Center" VerticalAlignment="Center"
                                Padding="4,2"/>
                                     <TextBlock Grid.Column="3" Text="{Binding TotalPrice, StringFormat=₱ {0:N0}}"
                                VerticalAlignment="Center"/>
-                                    <TextBlock Grid.Column="4" Text="{Binding AppointmentDate, StringFormat=dd/MM/yyyy}"
+                                    <TextBlock Grid.Column="4" Text="{Binding ScheduledAt, StringFormat=dd/MM/yyyy}"
                                VerticalAlignment="Center"/>
                                     <Border Grid.Column="5" VerticalAlignment="Center"
                                 HorizontalAlignment="Center"
@@ -139,8 +133,8 @@
                                                     <DataTrigger Binding="{Binding Status}" Value="Pending">
                                                         <Setter Property="Background" Value="#FFF4E5"/>
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Ongoing">
-                                                        <Setter Property="Background" Value="#FFE5E5"/>
+                                                    <DataTrigger Binding="{Binding Status}" Value="In Progress">
+                                                        <Setter Property="Background" Value="#E5F0FF"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
@@ -162,8 +156,8 @@
                                                          <Trigger Property="Text" Value="Pending">
                                                             <Setter Property="Foreground" Value="#FF8800"/>
                                                         </Trigger>
-                                                          <Trigger Property="Text" Value="Ongoing">
-                                                            <Setter Property="Foreground" Value="#FF4444"/>
+                                                          <Trigger Property="Text" Value="In Progress">
+                                                            <Setter Property="Foreground" Value="#3366CC"/>
                                                         </Trigger>
                                                     </Style.Triggers>
                                                 </Style>

@@ -14,6 +14,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using gentech_services.Models;
+using gentech_services.Services;
+using gentech_services.Data;
+using gentech_services.Repositories;
+using Microsoft.EntityFrameworkCore;
 using ProductServicesManagementSystem.Models;
 
 namespace gentech_services.Views.Pages
@@ -27,11 +31,14 @@ namespace gentech_services.Views.Pages
         public ObservableCollection<Category> Categories { get; set; }
         private ObservableCollection<CategoryViewModel> categoryViewModels;
         private ObservableCollection<Service> filteredServices;
+        private ServiceService _serviceService;
+        private CategoryService _categoryService;
+        private GentechDbContext _dbContext;
 
         public ServiceManagementPage()
         {
             InitializeComponent();
-            LoadSampleData();
+            InitializeDatabase();
             DataContext = this;
 
             // Wire up modal event
@@ -45,6 +52,56 @@ namespace gentech_services.Views.Pages
             ServiceActionMenuControl.OnDelete += ServiceActionMenuControl_OnDelete;
         }
 
+        private async void InitializeDatabase()
+        {
+            try
+            {
+                var optionsBuilder = new DbContextOptionsBuilder<GentechDbContext>();
+                optionsBuilder.UseSqlite("Data Source=gentech.db");
+
+                _dbContext = new GentechDbContext(optionsBuilder.Options);
+                await _dbContext.Database.EnsureCreatedAsync();
+
+                var serviceRepository = new ServiceRepository(_dbContext);
+                var categoryRepository = new CategoryRepository(_dbContext);
+                _serviceService = new ServiceService(serviceRepository, categoryRepository);
+                _categoryService = new CategoryService(categoryRepository);
+
+                await LoadDataFromDatabase();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Database initialization error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task LoadDataFromDatabase()
+        {
+            try
+            {
+                // Load categories
+                var categories = await _categoryService.GetServiceCategoriesAsync();
+                Categories = new ObservableCollection<Category>(categories);
+
+                // Load services
+                var services = await _serviceService.GetAllServicesAsync();
+                Services = new ObservableCollection<Service>(services);
+
+                ServicesItemsControl.ItemsSource = Services;
+                RefreshCategoryList();
+
+                // Re-initialize modal with updated categories
+                if (AddServiceModalControl != null)
+                {
+                    AddServiceModalControl.Initialize(Categories);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         public class CategoryViewModel
         {
             public int CategoryID { get; set; }
@@ -53,85 +110,6 @@ namespace gentech_services.Views.Pages
             public Category OriginalCategory { get; set; }
         }
 
-        private void LoadSampleData()
-        {
-            // Load sample categories
-            Categories = new ObservableCollection<Category>
-            {
-                new Category { CategoryID = 1, Name = "Hardware Services", Type = "Service" },
-                new Category { CategoryID = 2, Name = "Software Services", Type = "Service" },
-                new Category { CategoryID = 3, Name = "Repair Services", Type = "Service" }
-            };
-
-            // Load sample services
-            Services = new ObservableCollection<Service>
-            {
-                new Service
-                {
-                    ServiceID = 1,
-                    Name = "Broken Motherboard",
-                    Description = "Motherboard repair or replacement",
-                    Price = 5999.00m,
-                    CategoryID = 3,
-                    Category = Categories[2],
-                    IsActive = true,
-                    CreatedAt = DateTime.Now.AddMonths(-2),
-                    UpdatedAt = new DateTime(2025, 2, 11)
-                },
-                new Service
-                {
-                    ServiceID = 2,
-                    Name = "RAM Upgrade",
-                    Description = "Memory upgrade service",
-                    Price = 3500.00m,
-                    CategoryID = 1,
-                    Category = Categories[0],
-                    IsActive = true,
-                    CreatedAt = DateTime.Now.AddMonths(-3),
-                    UpdatedAt = new DateTime(2025, 1, 15)
-                },
-                new Service
-                {
-                    ServiceID = 3,
-                    Name = "Windows Installation",
-                    Description = "Fresh Windows OS installation",
-                    Price = 1500.00m,
-                    CategoryID = 2,
-                    Category = Categories[1],
-                    IsActive = true,
-                    CreatedAt = DateTime.Now.AddMonths(-1),
-                    UpdatedAt = new DateTime(2025, 2, 20)
-                },
-                new Service
-                {
-                    ServiceID = 4,
-                    Name = "Virus Removal",
-                    Description = "Complete virus and malware removal",
-                    Price = 1000.00m,
-                    CategoryID = 2,
-                    Category = Categories[1],
-                    IsActive = false,
-                    CreatedAt = DateTime.Now.AddMonths(-4),
-                    UpdatedAt = new DateTime(2025, 1, 5)
-                },
-                new Service
-                {
-                    ServiceID = 5,
-                    Name = "Screen Replacement",
-                    Description = "Laptop screen replacement",
-                    Price = 4500.00m,
-                    CategoryID = 3,
-                    Category = Categories[2],
-                    IsActive = true,
-                    CreatedAt = DateTime.Now.AddMonths(-2),
-                    UpdatedAt = new DateTime(2025, 2, 8)
-                }
-            };
-
-            ServicesItemsControl.ItemsSource = Services;
-
-            RefreshCategoryList();
-        }
 
         private void RefreshCategoryList()
         {
@@ -221,25 +199,35 @@ namespace gentech_services.Views.Pages
                 VerticalContentAlignment = VerticalAlignment.Center,
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
-            saveButton.Click += (s, args) =>
+            saveButton.Click += async (s, args) =>
             {
                 var newName = textBox.Text.Trim();
                 if (!string.IsNullOrEmpty(newName))
                 {
-                    categoryVM.OriginalCategory.Name = newName;
-
-                    // Update all services that reference this category
-                    foreach (var service in Services.Where(s => s.CategoryID == categoryVM.CategoryID))
+                    try
                     {
-                        service.Category = categoryVM.OriginalCategory;
+                        // Update category in database
+                        await _categoryService.UpdateCategoryAsync(
+                            categoryId: categoryVM.CategoryID,
+                            name: newName,
+                            type: "Service"
+                        );
+
+                        // Reload data from database
+                        await LoadDataFromDatabase();
+
+                        inputDialog.Close();
+
+                        MessageBox.Show($"Category renamed to '{newName}' successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
-
-                    // Refresh both lists
-                    RefreshCategoryList();
-                    ServicesItemsControl.ItemsSource = null;
-                    ServicesItemsControl.ItemsSource = Services;
-
-                    inputDialog.Close();
+                    catch (InvalidOperationException ex)
+                    {
+                        MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Failed to rename category: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
                 else
                 {
@@ -264,7 +252,7 @@ namespace gentech_services.Views.Pages
             inputDialog.ShowDialog();
         }
 
-        private void DeleteCategory_Click(object sender, RoutedEventArgs e)
+        private async void DeleteCategory_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
             var categoryVM = button?.DataContext as CategoryViewModel;
@@ -291,12 +279,24 @@ namespace gentech_services.Views.Pages
 
             if (result == MessageBoxResult.Yes)
             {
-                Categories.Remove(categoryVM.OriginalCategory);
-                RefreshCategoryList();
+                try
+                {
+                    // Delete from database
+                    await _categoryService.DeleteCategoryAsync(categoryVM.CategoryID);
+
+                    // Reload data from database
+                    await LoadDataFromDatabase();
+
+                    MessageBox.Show($"Category '{categoryVM.Name}' has been deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete category: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
-        private void AddCategory_Click(object sender, RoutedEventArgs e)
+        private async void AddCategory_Click(object sender, RoutedEventArgs e)
         {
             var categoryName = NewCategoryTextBox.Text.Trim();
 
@@ -306,30 +306,27 @@ namespace gentech_services.Views.Pages
                 return;
             }
 
-            // Check if category already exists
-            if (Categories.Any(c => c.Name.Equals(categoryName, StringComparison.OrdinalIgnoreCase)))
+            try
             {
-                MessageBox.Show("A category with this name already exists.", "Duplicate Category", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                // Create category in database
+                await _categoryService.CreateCategoryAsync(categoryName, "Service");
+
+                // Reload data from database
+                await LoadDataFromDatabase();
+
+                // Clear the textbox
+                NewCategoryTextBox.Text = string.Empty;
+
+                MessageBox.Show($"Category '{categoryName}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-
-            // Get next ID
-            int nextId = Categories.Any() ? Categories.Max(c => c.CategoryID) + 1 : 1;
-
-            var newCategory = new Category
+            catch (InvalidOperationException ex)
             {
-                CategoryID = nextId,
-                Name = categoryName,
-                Type = "Service"
-            };
-
-            Categories.Add(newCategory);
-            RefreshCategoryList();
-
-            // Clear the textbox
-            NewCategoryTextBox.Text = string.Empty;
-
-            MessageBox.Show($"Category '{categoryName}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to create category: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void NewService_Click(object sender, RoutedEventArgs e)
@@ -359,41 +356,58 @@ namespace gentech_services.Views.Pages
             }
         }
 
-        private void EditServiceModalControl_OnServiceUpdated(object sender, Service updatedService)
+        private async void EditServiceModalControl_OnServiceUpdated(object sender, Service updatedService)
         {
-            // Refresh services table
-            ServicesItemsControl.ItemsSource = null;
-            ServicesItemsControl.ItemsSource = Services;
+            try
+            {
+                // Update in database
+                await _serviceService.UpdateServiceAsync(
+                    serviceId: updatedService.ServiceID,
+                    name: updatedService.Name,
+                    description: updatedService.Description ?? string.Empty,
+                    price: updatedService.Price,
+                    categoryId: updatedService.CategoryID,
+                    isActive: updatedService.IsActive
+                );
 
-            // Refresh categories to update service counts
-            RefreshCategoryList();
+                // Reload data from database
+                await LoadDataFromDatabase();
 
-            // Close edit modal
-            EditModalOverlay.Visibility = Visibility.Collapsed;
+                // Close edit modal
+                EditModalOverlay.Visibility = Visibility.Collapsed;
 
-            MessageBox.Show($"Service '{updatedService.Name}' has been updated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Service '{updatedService.Name}' has been updated successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating service: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void AddServiceModalControl_OnServiceSaved(object sender, Service newService)
+        private async void AddServiceModalControl_OnServiceSaved(object sender, Service newService)
         {
-            // Get next ServiceID
-            int nextId = Services.Any() ? Services.Max(s => s.ServiceID) + 1 : 1;
-            newService.ServiceID = nextId;
+            try
+            {
+                // Create in database
+                await _serviceService.CreateServiceAsync(
+                    name: newService.Name,
+                    description: newService.Description ?? string.Empty,
+                    price: newService.Price,
+                    categoryId: newService.CategoryID
+                );
 
-            // Add to collection
-            Services.Add(newService);
+                // Reload data from database
+                await LoadDataFromDatabase();
 
-            // Refresh services table
-            ServicesItemsControl.ItemsSource = null;
-            ServicesItemsControl.ItemsSource = Services;
+                // Close modal
+                ModalOverlay.Visibility = Visibility.Collapsed;
 
-            // Refresh categories to update service counts
-            RefreshCategoryList();
-
-            // Close modal
-            ModalOverlay.Visibility = Visibility.Collapsed;
-
-            MessageBox.Show($"Service '{newService.Name}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Service '{newService.Name}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding service: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ServiceActionButton_Click(object sender, RoutedEventArgs e)
@@ -421,7 +435,7 @@ namespace gentech_services.Views.Pages
             EditModalOverlay.Visibility = Visibility.Visible;
         }
 
-        private void ServiceActionMenuControl_OnDelete(object sender, Service service)
+        private async void ServiceActionMenuControl_OnDelete(object sender, Service service)
         {
             ServiceActionPopup.IsOpen = false;
 
@@ -434,16 +448,20 @@ namespace gentech_services.Views.Pages
 
             if (result == MessageBoxResult.Yes)
             {
-                Services.Remove(service);
+                try
+                {
+                    // Delete from database
+                    await _serviceService.DeleteServiceAsync(service.ServiceID);
 
-                // Refresh services table
-                ServicesItemsControl.ItemsSource = null;
-                ServicesItemsControl.ItemsSource = Services;
+                    // Reload data from database
+                    await LoadDataFromDatabase();
 
-                // Refresh categories to update service counts
-                RefreshCategoryList();
-
-                MessageBox.Show($"Service '{service.Name}' has been deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show($"Service '{service.Name}' has been deleted successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error deleting service: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 

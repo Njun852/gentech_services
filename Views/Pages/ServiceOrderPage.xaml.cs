@@ -1,4 +1,5 @@
 ﻿using gentech_services.ViewsModels;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,7 +28,22 @@ namespace gentech_services.Views.Pages
         {
             InitializeComponent();
 
-            viewModel = new ServiceOrderViewModel();
+            // Initialize database services
+            var dbContext = new gentech_services.Data.GentechDbContext(
+                new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<gentech_services.Data.GentechDbContext>()
+                    .UseSqlite("Data Source=gentech.db")
+                    .Options);
+
+            var serviceOrderRepository = new gentech_services.Repositories.ServiceOrderRepository(dbContext);
+            var serviceRepository = new gentech_services.Repositories.ServiceRepository(dbContext);
+            var categoryRepository = new gentech_services.Repositories.CategoryRepository(dbContext);
+            var userRepository = new gentech_services.Repositories.UserRepository(dbContext);
+
+            var serviceOrderService = new gentech_services.Services.ServiceOrderService(serviceOrderRepository, serviceRepository);
+            var serviceService = new gentech_services.Services.ServiceService(serviceRepository, categoryRepository);
+            var userService = new gentech_services.Services.UserService(userRepository);
+
+            viewModel = new ServiceOrderViewModel(serviceOrderService, serviceService, userService);
             DataContext = viewModel;
 
             // Wire up the modal actions

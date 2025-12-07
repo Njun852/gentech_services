@@ -85,20 +85,20 @@
 
 
         <StackPanel Grid.Row="2" Orientation="Vertical" >
-            <local:IconButton  Text="Dashboard" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/dashboard_customize.png"  Click="Dashboard_Click"  Style="{StaticResource SidebarButtonStyle}"/>
-            <local:IconButton  Text="Services" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/home_repair_service.png"  Click="Services_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
+            <local:IconButton x:Name="DashboardButton" Text="Dashboard" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/dashboard_customize.png"  Click="Dashboard_Click"  Style="{StaticResource SidebarButtonStyle}"/>
+            <local:IconButton x:Name="ServicesButton" Text="Services" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/home_repair_service.png"  Click="Services_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
             <StackPanel x:Name="ServicesSubButtons" Orientation="Vertical" HorizontalAlignment="Stretch" Visibility="Visible">
-                <local:IconButton  Text="Service Management" Click="ServiceManagement_Click" Style="{StaticResource SidebarSubButtonStyle}"/>
-                <local:IconButton  Text="Service Orders"  Click="ServiceOrders_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton x:Name="ServiceManagementButton" Text="Service Management" Click="ServiceManagement_Click" Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton x:Name="ServiceOrdersButton" Text="Service Orders"  Click="ServiceOrders_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
             </StackPanel>
-            <local:IconButton  Text="Products" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/Product.png"  Click="Products_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
+            <local:IconButton x:Name="ProductsButton" Text="Products" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/Product.png"  Click="Products_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
             <StackPanel x:Name="ProductsSubButtons" Orientation="Vertical" HorizontalAlignment="Stretch" Visibility="Visible">
-                <local:IconButton  Text="Inventory Management" Click="InventoryManagement_Click" Style="{StaticResource SidebarSubButtonStyle}"/>
-                <local:IconButton  Text="Point Of Sale"  Click="ProductOrders_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
-                <local:IconButton  Text="Product Order History"  Click="ProductOrderHistory_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
-                <local:IconButton  Text="Inventory Log" Click="InventoryLog_Click" Style="{StaticResource SidebarSubButtonStyle}" Loaded="IconButton_Loaded"/>
+                <local:IconButton x:Name="InventoryManagementButton" Text="Inventory Management" Click="InventoryManagement_Click" Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton x:Name="POSButton" Text="Point Of Sale"  Click="ProductOrders_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton x:Name="ProductOrderHistoryButton" Text="Product Order History"  Click="ProductOrderHistory_Click"  Style="{StaticResource SidebarSubButtonStyle}"/>
+                <local:IconButton x:Name="InventoryLogButton" Text="Inventory Log" Click="InventoryLog_Click" Style="{StaticResource SidebarSubButtonStyle}" Loaded="IconButton_Loaded"/>
             </StackPanel>
-            <local:IconButton  Text="Users" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/person.png"  Click="Users_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
+            <local:IconButton x:Name="UsersButton" Text="Users" Icon="pack://application:,,,/gentech_services;component/Resources/Assets/Icons/person.png"  Click="Users_Click"  Style="{StaticResource SidebarButtonStyle}" Loaded="IconButton_Loaded_1"/>
         </StackPanel>
 
         <StackPanel Grid.Row="4" Orientation="Vertical" VerticalAlignment="Bottom" Margin="0,0,0,50" >

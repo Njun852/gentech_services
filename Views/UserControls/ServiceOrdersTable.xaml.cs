@@ -74,10 +74,10 @@ namespace gentech_services.Views.UserControls
         private void ViewMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var contextMenu = FindContextMenu(sender);
-            if (contextMenu?.Tag is GroupedServiceOrder groupedOrder && groupedOrder.Orders?.Count > 0)
+            if (contextMenu?.Tag is GroupedServiceOrder groupedOrder && groupedOrder.Order != null)
             {
                 dynamic vm = DataContext;
-                vm.ViewDetailsCommand?.Execute(groupedOrder.Orders[0]);
+                vm.ViewDetailsCommand?.Execute(groupedOrder.Order);
                 contextMenu.IsOpen = false;
             }
         }
@@ -85,10 +85,10 @@ namespace gentech_services.Views.UserControls
         private void EditMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var contextMenu = FindContextMenu(sender);
-            if (contextMenu?.Tag is GroupedServiceOrder groupedOrder && groupedOrder.Orders?.Count > 0)
+            if (contextMenu?.Tag is GroupedServiceOrder groupedOrder && groupedOrder.Order != null)
             {
                 dynamic vm = DataContext;
-                vm.EditCommand?.Execute(groupedOrder.Orders[0]);
+                vm.EditCommand?.Execute(groupedOrder.Order);
                 contextMenu.IsOpen = false;
             }
         }
@@ -96,10 +96,10 @@ namespace gentech_services.Views.UserControls
         private void EditAppointmentMenuItem_Click(object sender, RoutedEventArgs e)
         {
             var contextMenu = FindContextMenu(sender);
-            if (contextMenu?.Tag is GroupedServiceOrder groupedOrder && groupedOrder.Orders?.Count > 0)
+            if (contextMenu?.Tag is GroupedServiceOrder groupedOrder && groupedOrder.Order != null)
             {
                 dynamic vm = DataContext;
-                vm.EditAppointmentCommand?.Execute(groupedOrder.Orders[0]);
+                vm.EditAppointmentCommand?.Execute(groupedOrder.Order);
                 contextMenu.IsOpen = false;
             }
         }

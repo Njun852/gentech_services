@@ -108,92 +108,84 @@ namespace gentech_services.Views.UserControls
         {
             if (orders == null || orders.Count == 0) return;
 
-            var firstOrder = orders[0];
+            var order = orders[0]; // In new schema, single service order contains multiple service items
 
-            // Set order details using first order
-            OrderIdText.Text = $"#S{firstOrder.SaleID:000}";
-            CreatedDateText.Text = $"Created: {firstOrder.AppointmentDate:MM/dd/yyyy}";
+            // Set order details
+            OrderIdText.Text = $"S{order.ServiceOrderID:000}";
+            CreatedDateText.Text = $"Created: {order.CreatedAt:MM/dd/yyyy}";
 
-            // Calculate overall status using priority logic
-            string overallStatus = GetOverallStatus(orders);
-            StatusText.Text = overallStatus;
-            SetStatusBadgeColor(overallStatus);
+            // Set status
+            StatusText.Text = order.Status;
+            SetStatusBadgeColor(order.Status);
 
-            // Customer details from first order
-            if (firstOrder.Customer != null)
-            {
-                CustomerNameText.Text = $"{firstOrder.Customer.FirstName} {firstOrder.Customer.LastName}";
-                CustomerEmailText.Text = firstOrder.Customer.Email ?? "N/A";
-                CustomerPhoneText.Text = firstOrder.Customer.Phone ?? "N/A";
-            }
+            // Customer details
+            CustomerNameText.Text = order.FullName ?? "N/A";
+            CustomerEmailText.Text = order.Email ?? "N/A";
+            CustomerPhoneText.Text = order.Phone ?? "N/A";
 
             // Clear existing services
             ServiceOrdersList.Children.Clear();
 
-            // Loop through all orders and add each service
+            // Loop through all service items and add each service
             decimal totalCost = 0;
-            foreach (var order in orders)
+            if (order.ServiceOrderItems != null)
             {
-                if (order.Service != null)
+                foreach (var item in order.ServiceOrderItems)
                 {
-                    // Create a horizontal stack panel for status badge + service name
-                    var serviceContainer = new StackPanel
+                    if (item.Service != null)
                     {
-                        Orientation = Orientation.Horizontal,
-                        Margin = new Thickness(0, 0, 0, 6)
-                    };
+                        // Create a horizontal stack panel for status badge + service name
+                        var serviceContainer = new StackPanel
+                        {
+                            Orientation = Orientation.Horizontal,
+                            Margin = new Thickness(0, 0, 0, 6)
+                        };
 
-                    // Status badge
-                    var statusBorder = new Border
-                    {
-                        CornerRadius = new CornerRadius(10),
-                        Padding = new Thickness(8, 3, 8, 3),
-                        Margin = new Thickness(0, 0, 8, 0),
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
+                        // Status badge (all items share the same order status)
+                        var statusBorder = new Border
+                        {
+                            CornerRadius = new CornerRadius(10),
+                            Padding = new Thickness(8, 3, 8, 3),
+                            Margin = new Thickness(0, 0, 8, 0),
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
 
-                    var statusTextBlock = new TextBlock
-                    {
-                        Text = order.Status ?? "Pending",
-                        FontSize = 11,
-                        FontWeight = FontWeights.SemiBold
-                    };
+                        var statusTextBlock = new TextBlock
+                        {
+                            Text = order.Status ?? "Pending",
+                            FontSize = 11,
+                            FontWeight = FontWeights.SemiBold
+                        };
 
-                    // Set status badge colors
-                    SetServiceStatusColors(statusBorder, statusTextBlock, order.Status);
+                        // Set status badge colors
+                        SetServiceStatusColors(statusBorder, statusTextBlock, order.Status);
 
-                    statusBorder.Child = statusTextBlock;
+                        statusBorder.Child = statusTextBlock;
 
-                    // Service name
-                    var serviceText = new TextBlock
-                    {
-                        Text = order.Service.Name ?? "N/A",
-                        FontSize = 13,
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
+                        // Service name
+                        var serviceText = new TextBlock
+                        {
+                            Text = item.Service.Name ?? "N/A",
+                            FontSize = 13,
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
 
-                    serviceContainer.Children.Add(statusBorder);
-                    serviceContainer.Children.Add(serviceText);
-                    ServiceOrdersList.Children.Add(serviceContainer);
+                        serviceContainer.Children.Add(statusBorder);
+                        serviceContainer.Children.Add(serviceText);
+                        ServiceOrdersList.Children.Add(serviceContainer);
 
-                    totalCost += order.Service.Price;
+                        totalCost += item.TotalPrice;
+                    }
                 }
             }
 
             CostText.Text = $"₱ {totalCost:N0}";
 
-            // Technician from first order
-            if (firstOrder.Technician != null)
-            {
-                TechnicianText.Text = firstOrder.Technician.Name ?? "Unassigned";
-            }
-            else
-            {
-                TechnicianText.Text = "Unassigned";
-            }
+            // Technician - not yet implemented in new schema
+            TechnicianText.Text = "Unassigned";
 
-            // Description - using issue description from appointment (same for all orders in the same appointment)
-            DescriptionText.Text = firstOrder.IssueDescription ?? "No description available";
+            // Description
+            DescriptionText.Text = order.IssueNotes ?? "No description available";
 
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;
@@ -207,9 +199,9 @@ namespace gentech_services.Views.UserControls
             if (orders.Any(o => o.Status?.ToLower() == "pending"))
                 return "Pending";
 
-            // Priority 2: If ANY service is Ongoing
-            if (orders.Any(o => o.Status?.ToLower() == "ongoing"))
-                return "Ongoing";
+            // Priority 2: If ANY service is In Progress
+            if (orders.Any(o => o.Status?.ToLower() == "in progress"))
+                return "In Progress";
 
             // Priority 3: If ALL services are Completed
             if (orders.All(o => o.Status?.ToLower() == "completed"))
@@ -239,10 +231,13 @@ namespace gentech_services.Views.UserControls
                     StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F0F0F0"));
                     StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
                     break;
-                case "ongoing":
+                case "in progress":
+                    StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5F0FF"));
+                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3366CC"));
+                    break;
                 default:
-                    StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE5E5"));
-                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF4444"));
+                    StatusBadge.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F0F0F0"));
+                    StatusText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
                     break;
             }
         }
@@ -263,10 +258,13 @@ namespace gentech_services.Views.UserControls
                     border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F0F0F0"));
                     textBlock.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
                     break;
-                case "ongoing":
+                case "in progress":
+                    border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5F0FF"));
+                    textBlock.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3366CC"));
+                    break;
                 default:
-                    border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFE5E5"));
-                    textBlock.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF4444"));
+                    border.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F0F0F0"));
+                    textBlock.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#888888"));
                     break;
             }
         }
