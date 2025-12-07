@@ -36,8 +36,8 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Padding" Value="8,8,8,6"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="12,12,12,12"/>
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -62,7 +62,7 @@
         <Style TargetType="{x:Type ListViewItem}">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Padding" Value="8,6,8,6"/>
+            <Setter Property="Padding" Value="12,10,12,10"/>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="Transparent"/>
@@ -179,38 +179,36 @@
                             <ListView.View>
                                 <GridView>
 
-                                    <GridViewColumn Header="Service Name" Width="240">
+                                    <GridViewColumn Header="Service Name" Width="280">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Service.Name}"
-                                                           FontWeight="Bold"
-                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="13"
                                                            Foreground="Black"
                                                            VerticalAlignment="Center"
-                                                           Margin="0,0,0,0"
                                                            TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
 
-                                    <GridViewColumn Header="Price" Width="110">
+                                    <GridViewColumn Header="Price" Width="120">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Service.Price, StringFormat='₱ {0:N2}'}"
-                                                           FontSize="11"
+                                                           FontSize="13"
                                                            Foreground="Black"
                                                            VerticalAlignment="Center"
-                                                           Margin="0,0,0,0"
                                                            TextAlignment="Left"/>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
 
-                                    <GridViewColumn Header="Status" Width="115">
+                                    <GridViewColumn Header="Status" Width="165">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Button x:Name="StatusButton"
-                                                        Padding="4,1"
+                                                        Padding="10,6"
                                                         BorderThickness="0"
                                                         FontWeight="SemiBold"
                                                         FontSize="7"
@@ -219,6 +217,7 @@
                                                         Click="StatusButton_Click"
                                                         Template="{StaticResource RoundedButtonTemplate}">
                                                     <Button.Style>
+                                                
                                                         <Style TargetType="Button">
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding Status}" Value="Pending">
@@ -253,16 +252,16 @@
                                         </GridViewColumn.CellTemplate>
                                     </GridViewColumn>
 
-                                    <GridViewColumn Header="Action" Width="60">
+                                    <GridViewColumn Header="Action" Width="90">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Button Content="Cancel"
                                                         Background="{StaticResource CancelColor}"
                                                         Foreground="White"
-                                                        Padding="4,1"
+                                                        Padding="10,6"
                                                         BorderThickness="0"
                                                         FontWeight="SemiBold"
-                                                        FontSize="7"
+                                                        FontSize="11"
                                                         HorizontalAlignment="Left"
                                                         Cursor="Hand"
                                                         Click="CancelService_Click"

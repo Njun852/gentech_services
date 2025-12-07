@@ -16,6 +16,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Header with Gray Background -->
@@ -142,12 +144,12 @@
                                 <ColumnDefinition Width="80"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBlock Grid.Column="0" Text="ID" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                            <TextBlock Grid.Column="0" Text="CODE" FontWeight="Bold" FontSize="13" Foreground="#333"/>
                             <TextBlock Grid.Column="1" Text="NAME" FontWeight="Bold" FontSize="13" Foreground="#333"/>
                             <TextBlock Grid.Column="2" Text="CATEGORY" FontWeight="Bold" FontSize="13" Foreground="#333"/>
                             <TextBlock Grid.Column="3" Text="PRICE" FontWeight="Bold" FontSize="13" Foreground="#333"/>
-                            <TextBlock Grid.Column="4" Text="STOCK QUANTITY" FontWeight="Bold" FontSize="13" Foreground="#333"/>
-                            <TextBlock Grid.Column="5" Text="SKU" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                            <TextBlock Grid.Column="4" Text="STOCK" FontWeight="Bold" FontSize="13" Foreground="#333"/>
+                            <TextBlock Grid.Column="5" Text="LOW STOCK LEVEL" FontWeight="Bold" FontSize="13" Foreground="#333"/>
                             <TextBlock Grid.Column="6" Text="ACTION" FontWeight="Bold" FontSize="13" Foreground="#333" HorizontalAlignment="Center"/>
                         </Grid>
                     </Border>
@@ -176,12 +178,13 @@
                                                 <ColumnDefinition Width="80"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <!-- ID -->
+                                            <!-- Product Code -->
                                             <TextBlock Grid.Column="0"
-                                                       Text="{Binding ProductID, StringFormat='P{0:000}'}"
+                                                       Text="{Binding ProductCode}"
                                                        FontSize="14"
                                                        VerticalAlignment="Center"
-                                                       Foreground="#333"/>
+                                                       Foreground="#333"
+                                                       FontWeight="SemiBold"/>
 
                                             <!-- Name -->
                                             <TextBlock Grid.Column="1"
@@ -213,9 +216,9 @@
                                                        VerticalAlignment="Center"
                                                        Foreground="#333"/>
 
-                                            <!-- SKU -->
+                                            <!-- Low Stock Level -->
                                             <TextBlock Grid.Column="5"
-                                                       Text="{Binding SKU}"
+                                                       Text="{Binding LowStockLevel}"
                                                        FontSize="14"
                                                        VerticalAlignment="Center"
                                                        Foreground="#666"/>
@@ -241,6 +244,112 @@
                 </Grid>
             </Border>
 
+            <!-- Categories Section -->
+            <Border Grid.Row="3" Padding="0" Margin="0,24,0,0" ClipToBounds="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Categories Table -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Categories Header -->
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="1.5*"/>
+                                <ColumnDefinition Width="2*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Category ID" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
+                            <TextBlock Grid.Column="1" Text="Name" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
+                            <TextBlock Grid.Column="2" Text="Products Count" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
+                            <TextBlock Grid.Column="3" Text="Action" FontWeight="SemiBold" FontSize="12" Margin="16,0,0,0"/>
+                        </Grid>
+
+                        <!-- Categories Content -->
+                        <ScrollViewer Grid.Row="1"
+                                      Style="{StaticResource CustomScrollViewer}"
+                                      VerticalScrollBarVisibility="Auto"
+                                      MaxHeight="200">
+                            <ItemsControl x:Name="CategoriesItemsControl"
+                                          AlternationCount="2">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource AlternatingRow}"
+                                                CornerRadius="5"
+                                                Padding="16,12"
+                                                Margin="0,2">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="1*"/>
+                                                    <ColumnDefinition Width="2*"/>
+                                                    <ColumnDefinition Width="1.5*"/>
+                                                    <ColumnDefinition Width="2*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0" Text="{Binding CategoryID}" FontSize="13" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding ProductsCount}" FontSize="13" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+                                                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button Content="Rename"
+                                                            Style="{StaticResource OutlineButton}"
+                                                            Background="White"
+                                                            Height="28"
+                                                            Width="70"
+                                                            FontSize="11"
+                                                            Margin="0,0,8,0"
+                                                            Tag="{Binding CategoryID}"
+                                                            Click="RenameProductCategory_Click"/>
+                                                    <Button Content="Delete"
+                                                            Style="{StaticResource OutlineButton}"
+                                                            Background="#FF0000"
+                                                            Foreground="White"
+                                                            Height="28"
+                                                            Width="70"
+                                                            FontSize="11"
+                                                            Tag="{Binding CategoryID}"
+                                                            Click="DeleteProductCategory_Click"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- Add Category Section -->
+                    <StackPanel Grid.Column="2" Orientation="Vertical" VerticalAlignment="Top" Width="180">
+                        <TextBox x:Name="NewProductCategoryTextBox"
+                                 Style="{StaticResource OutlineTextBox}"
+                                 Tag="New Category"
+                                 Height="38"
+                                 FontSize="13"
+                                 VerticalContentAlignment="Center"
+                                 Margin="0,0,0,8"/>
+
+                        <Button Content="Add Category"
+                                Style="{StaticResource PrimaryButton}"
+                                Background="#00C206"
+                                Foreground="Black"
+                                FontWeight="SemiBold"
+                                Height="38"
+                                FontSize="12"
+                                Click="AddProductCategory_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
             <!-- Action Menu Popup -->
             <Popup x:Name="ProductActionPopup"
                    StaysOpen="False"
@@ -256,14 +365,22 @@
                     </Border.Effect>
                     <StackPanel>
                         <Button Content="View"
-                                Style="{StaticResource MenuItemButton}"
+                                Style="{StaticResource OutlineButton}"
+                                Background="White"
+                                Foreground="Black"
+                                FontWeight="Normal"
+                                BorderThickness="0"
                                 Width="150"
                                 HorizontalContentAlignment="Left"
                                 Height="36"
                                 FontSize="14"
                                 Click="ViewProduct_Click"/>
                         <Button Content="Edit Stock/Details"
-                                Style="{StaticResource MenuItemButton}"
+                                Style="{StaticResource OutlineButton}"
+                                Background="White"
+                                Foreground="Black"
+                                FontWeight="Normal"
+                                BorderThickness="0"
                                 Width="150"
                                 HorizontalContentAlignment="Left"
                                 Height="36"
@@ -375,11 +492,13 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="12"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="12"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" FontSize="13" Foreground="#666">
-                                <Run Text="SKU: " FontWeight="SemiBold"/>
-                                <Run Text="{Binding ViewSKU}"/>
+                                <Run Text="Product Code: " FontWeight="SemiBold"/>
+                                <Run Text="{Binding ViewProductCode}"/>
                             </TextBlock>
 
                             <TextBlock Grid.Row="2" FontSize="13" Foreground="#666">
@@ -403,6 +522,11 @@
                             </TextBlock>
 
                             <TextBlock Grid.Row="10" FontSize="13" Foreground="#666">
+                                <Run Text="Low Stock Level: " FontWeight="SemiBold"/>
+                                <Run Text="{Binding ViewLowStockLevel}"/>
+                            </TextBlock>
+
+                            <TextBlock Grid.Row="12" FontSize="13" Foreground="#666">
                                 <Run Text="Description: " FontWeight="SemiBold"/>
                                 <LineBreak/>
                                 <Run Text="{Binding ViewDescription}"/>
@@ -488,6 +612,8 @@
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="14"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="14"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -495,7 +621,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Row 1: Name & SKU -->
+                        <!-- Row 1: Name & Product Code -->
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock Text="Name"
                                        FontSize="12"
@@ -509,14 +635,16 @@
                         </StackPanel>
 
                         <StackPanel Grid.Row="0" Grid.Column="2">
-                            <TextBlock Text="SKU"
+                            <TextBlock Text="Product Code"
                                        FontSize="12"
                                        Foreground="#666"
                                        Margin="0,0,0,6"/>
                             <TextBox Style="{StaticResource OutlineTextBox}"
-                                     BorderBrush="Black"
-                                     Tag="83M00051PH"
-                                     Text="{Binding EditSKU, UpdateSourceTrigger=PropertyChanged}"
+                                     BorderBrush="#DDD"
+                                     Background="#F5F5F5"
+                                     Tag="Auto-generated"
+                                     Text="{Binding EditProductCode, Mode=OneWay}"
+                                     IsReadOnly="True"
                                      Height="38"/>
                         </StackPanel>
 
@@ -526,7 +654,8 @@
                                        FontSize="12"
                                        Foreground="#666"
                                        Margin="0,0,0,6"/>
-                            <ComboBox Style="{StaticResource OutlineComboBox}"
+                            <ComboBox x:Name="EditProductCategoryComboBox"
+                                      Style="{StaticResource OutlineComboBox}"
                                       BorderBrush="Black"
                                       SelectedValue="{Binding EditSelectedCategory}"
                                       SelectedValuePath="Content"
@@ -561,8 +690,21 @@
                             </Grid>
                         </StackPanel>
 
-                        <!-- Row 3: Description (full width) -->
-                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
+                        <!-- Row 3: Low Stock Level -->
+                        <StackPanel Grid.Row="4" Grid.Column="0">
+                            <TextBlock Text="Low Stock Level"
+                                       FontSize="12"
+                                       Foreground="#666"
+                                       Margin="0,0,0,6"/>
+                            <TextBox Style="{StaticResource OutlineTextBox}"
+                                     BorderBrush="Black"
+                                     Tag="10"
+                                     Text="{Binding EditLowStockLevel, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="38"/>
+                        </StackPanel>
+
+                        <!-- Row 4: Description (full width) -->
+                        <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3">
                             <TextBlock Text="Description"
                                        FontSize="12"
                                        Foreground="#666"
@@ -907,7 +1049,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Row 1: Name & SKU -->
+                    <!-- Row 1: Name & Category -->
                     <StackPanel Grid.Row="0" Grid.Column="0">
                         <TextBlock Text="Name"
                                    FontSize="13"
@@ -921,24 +1063,12 @@
                     </StackPanel>
 
                     <StackPanel Grid.Row="0" Grid.Column="2">
-                        <TextBlock Text="SKU"
-                                   FontSize="13"
-                                   Foreground="#666"
-                                   Margin="0,0,0,8"/>
-                        <TextBox Style="{StaticResource OutlineTextBox}"
-                                 BorderBrush="Black"
-                                 Tag="83M00051PH"
-                                 Text="{Binding SKU, UpdateSourceTrigger=PropertyChanged}"
-                                 Height="40"/>
-                    </StackPanel>
-
-                    <!-- Row 2: Category & Price -->
-                    <StackPanel Grid.Row="2" Grid.Column="0">
                         <TextBlock Text="Category"
                                    FontSize="13"
                                    Foreground="#666"
                                    Margin="0,0,0,8"/>
-                        <ComboBox Style="{StaticResource OutlineComboBox}"
+                        <ComboBox x:Name="AddProductCategoryComboBox"
+                                  Style="{StaticResource OutlineComboBox}"
                                   BorderBrush="Black"
                                   SelectedValue="{Binding SelectedCategory}"
                                   SelectedValuePath="Content"
@@ -952,7 +1082,8 @@
                         </ComboBox>
                     </StackPanel>
 
-                    <StackPanel Grid.Row="2" Grid.Column="2">
+                    <!-- Row 2: Price & Low Stock Level -->
+                    <StackPanel Grid.Row="2" Grid.Column="0">
                         <TextBlock Text="Price"
                                    FontSize="13"
                                    Foreground="#666"
@@ -961,6 +1092,18 @@
                                  BorderBrush="Black"
                                  Tag="₱49,999"
                                  Text="{Binding Price, UpdateSourceTrigger=PropertyChanged}"
+                                 Height="40"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Grid.Column="2">
+                        <TextBlock Text="Low Stock Level"
+                                   FontSize="13"
+                                   Foreground="#666"
+                                   Margin="0,0,0,8"/>
+                        <TextBox Style="{StaticResource OutlineTextBox}"
+                                 BorderBrush="Black"
+                                 Tag="10"
+                                 Text="{Binding LowStockLevel, UpdateSourceTrigger=PropertyChanged}"
                                  Height="40"/>
                     </StackPanel>
 

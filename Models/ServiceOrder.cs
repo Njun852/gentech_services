@@ -35,6 +35,7 @@ namespace gentech_services.Models
         public string PaymentMethod { get; set; }
         public Customer Customer { get; set; }
         public int SaleID { get; set; }
+        public string IssueDescription { get; set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 

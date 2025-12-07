@@ -39,7 +39,7 @@ namespace gentech_services.Views.UserControls
             AppointmentDatePicker.SelectedDate = order.AppointmentDate;
 
             // Set issue description
-            IssueDescriptionTextBox.Text = order.Service?.Description ?? "";
+            IssueDescriptionTextBox.Text = order.IssueDescription ?? "";
 
             // Clear any validation errors
             ClearAllValidationErrors();
@@ -84,10 +84,7 @@ namespace gentech_services.Views.UserControls
             }
 
             // Update issue description
-            if (currentOrder.Service != null)
-            {
-                currentOrder.Service.Description = IssueDescriptionTextBox.Text.Trim();
-            }
+            currentOrder.IssueDescription = IssueDescriptionTextBox.Text.Trim();
 
             // Notify parent to refresh the UI
             OnSaveChanges?.Invoke(currentOrder);

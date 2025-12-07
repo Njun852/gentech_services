@@ -12,8 +12,9 @@ namespace gentech_services.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }
-        public string SKU { get; set; }
+        public string ProductCode { get; set; } // Auto-generated format: PYYMM XXX
         public int StockQuanity { get; set; }
+        public int LowStockLevel { get; set; } // Threshold for low stock alerts
         public int CategoryID { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }

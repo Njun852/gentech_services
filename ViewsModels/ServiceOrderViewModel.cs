@@ -757,7 +757,8 @@ namespace gentech_services.ViewsModels
                     PaymentMethod = "Not Set",
                     Technician = SelectedTechnician == null || SelectedTechnician.Name == "All Technicians"
                         ? new User { Name = "Unassigned" }
-                        : SelectedTechnician
+                        : SelectedTechnician,
+                    IssueDescription = IssueDescription ?? "" // Use issue description from the appointment form
                 };
 
                 allServiceOrders.Add(serviceOrder);

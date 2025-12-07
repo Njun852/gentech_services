@@ -96,10 +96,11 @@ namespace gentech_services.ViewsModels
             {
                 ProductID = 1,
                 Name = "iPhone 14 Pro",
-                SKU = "IPH14P-256",
+                ProductCode = "P2512001",
                 Description = "256GB, Space Black",
                 Price = 54990.00m,
                 StockQuanity = 3,
+                LowStockLevel = 5,
                 IsActive = true,
                 CreatedAt = DateTime.Now,
                 Category = new Category { CategoryID = 1, Name = "Smartphones", Type = "Product" }
@@ -109,10 +110,11 @@ namespace gentech_services.ViewsModels
             {
                 ProductID = 2,
                 Name = "Samsung Galaxy S23",
-                SKU = "SGS23-128",
+                ProductCode = "P2512002",
                 Description = "128GB, Phantom Black",
                 Price = 49990.00m,
                 StockQuanity = 2,
+                LowStockLevel = 5,
                 IsActive = true,
                 CreatedAt = DateTime.Now,
                 Category = new Category { CategoryID = 1, Name = "Smartphones", Type = "Product" }
@@ -122,10 +124,11 @@ namespace gentech_services.ViewsModels
             {
                 ProductID = 3,
                 Name = "MacBook Air M2",
-                SKU = "MBA-M2-256",
+                ProductCode = "P2512003",
                 Description = "13-inch, 256GB SSD",
                 Price = 64990.00m,
                 StockQuanity = 1,
+                LowStockLevel = 5,
                 IsActive = true,
                 CreatedAt = DateTime.Now,
                 Category = new Category { CategoryID = 2, Name = "Laptops", Type = "Product" }
@@ -135,10 +138,11 @@ namespace gentech_services.ViewsModels
             {
                 ProductID = 4,
                 Name = "AirPods Pro 2",
-                SKU = "APP2-GEN2",
+                ProductCode = "P2512004",
                 Description = "2nd Generation",
                 Price = 12990.00m,
                 StockQuanity = 4,
+                LowStockLevel = 10,
                 IsActive = true,
                 CreatedAt = DateTime.Now,
                 Category = new Category { CategoryID = 3, Name = "Accessories", Type = "Product" }
@@ -148,10 +152,11 @@ namespace gentech_services.ViewsModels
             {
                 ProductID = 5,
                 Name = "iPad Pro 11\"",
-                SKU = "IPP11-256",
+                ProductCode = "P2512005",
                 Description = "11-inch, 256GB, Wi-Fi",
                 Price = 44990.00m,
                 StockQuanity = 2,
+                LowStockLevel = 5,
                 IsActive = true,
                 CreatedAt = DateTime.Now,
                 Category = new Category { CategoryID = 4, Name = "Tablets", Type = "Product" }

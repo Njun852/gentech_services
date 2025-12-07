@@ -30,18 +30,38 @@
         <Grid >
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="12"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Title -->
-            <TextBlock Text="Add User"
-           FontSize="24"
-           FontWeight="Bold"
-           Grid.Row="0"/>
+      
 
             <!-- Form -->
+            <StackPanel>
+                <StackPanel.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="Margin" Value="0,0,0,3"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                    </Style>
+                    <Style TargetType="TextBox">
+                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="BorderBrush" Value="#000000"/>
+                    </Style>
+                </StackPanel.Resources>
+                <TextBlock Text="Add User"
+     FontSize="24"
+     FontWeight="Bold"
+     Grid.Row="0"/>
+                <TextBlock Text="Full Name "/>
+                <TextBox Style="{StaticResource EditTextBox}" Margin="0,0,0,20"/>
+                <TextBlock Text="Role "/>
+                <ComboBox x:Name="RoleComboBox" Style="{StaticResource EditComboBox}" MaxDropDownHeight="150"/>
+                <TextBlock Text="Full Name "/>
+                <TextBox Style="{StaticResource EditTextBox}" Margin="0,0,0,20"/>
+                <TextBlock Text="Role "/>
+
+            </StackPanel>
+            
             <Grid Grid.Row="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -65,11 +85,7 @@
                         </Style>
                     </Grid.Resources>
                     <StackPanel Orientation="Vertical" Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="Full Name "/>
-                        <TextBox Style="{StaticResource EditTextBox}" Margin="0,0,0,20"/>
-                        <TextBlock Text="Role "/>
-                        <ComboBox x:Name="RoleComboBox" Style="{StaticResource EditComboBox}" MaxDropDownHeight="150"/>
-
+                      
 
 
                     </StackPanel>
@@ -89,7 +105,7 @@
 
             <!-- Buttons -->
             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,10,0,0" >
-                <Button x:Name="BtnSave" Content="Save"  FontSize="12" Padding="8,4" Style="{StaticResource OutlineButton}" Background="#0000FF" Foreground="White"  Width="70"/>
+                <Button x:Name="BtnSave" Content="Add User"  FontSize="12" Padding="8,4" Style="{StaticResource OutlineButton}" Background="#0000FF" Foreground="White"  Width="70"/>
                 <Button  x:Name="BtnClear" Content="Clear"  FontSize="12" Padding="8,4" Style="{StaticResource OutlineButton}" Background="#FFFFFF" Width="70" Margin="10,0,0,0"/>
 
             </StackPanel>

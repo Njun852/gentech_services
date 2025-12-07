@@ -21,26 +21,26 @@ namespace gentech_services.ViewsModels
 
         // Add Product Form Properties
         private string productName;
-        private string sku;
         private string selectedCategory;
         private decimal? price;
-        private int? stockQuantity;
+        private int? lowStockLevel;
         private string description;
 
         // Edit Product Form Properties
         private string editProductName;
-        private string editSku;
+        private string editProductCode;
         private string editSelectedCategory;
         private decimal? editPrice;
-        private int? editStockQuantity;
+        private int? editLowStockLevel;
         private string editDescription;
 
         // View Product Properties
-        private string viewSku;
+        private string viewProductCode;
         private string viewCategory;
         private string viewStatus;
         private string viewPrice;
         private string viewStock;
+        private int? viewLowStockLevel;
         private string viewDescription;
 
         // Modal Visibility
@@ -125,13 +125,13 @@ namespace gentech_services.ViewsModels
             }
         }
 
-        public string SKU
+        public int? LowStockLevel
         {
-            get { return sku; }
+            get { return lowStockLevel; }
             set
             {
-                sku = value;
-                OnPropertyChanged(nameof(SKU));
+                lowStockLevel = value;
+                OnPropertyChanged(nameof(LowStockLevel));
                 AddProductCommand.RaiseCanExecuteChanged();
             }
         }
@@ -157,18 +157,6 @@ namespace gentech_services.ViewsModels
                 AddProductCommand.RaiseCanExecuteChanged();
             }
         }
-
-        public int? StockQuantity
-        {
-            get { return stockQuantity; }
-            set
-            {
-                stockQuantity = value;
-                OnPropertyChanged(nameof(StockQuantity));
-                AddProductCommand.RaiseCanExecuteChanged();
-            }
-        }
-
         public string Description
         {
             get { return description; }
@@ -191,13 +179,23 @@ namespace gentech_services.ViewsModels
             }
         }
 
-        public string EditSKU
+        public string EditProductCode
         {
-            get { return editSku; }
+            get { return editProductCode; }
             set
             {
-                editSku = value;
-                OnPropertyChanged(nameof(EditSKU));
+                editProductCode = value;
+                OnPropertyChanged(nameof(EditProductCode));
+            }
+        }
+
+        public int? EditLowStockLevel
+        {
+            get { return editLowStockLevel; }
+            set
+            {
+                editLowStockLevel = value;
+                OnPropertyChanged(nameof(EditLowStockLevel));
                 SaveEditCommand.RaiseCanExecuteChanged();
             }
         }
@@ -223,17 +221,6 @@ namespace gentech_services.ViewsModels
             }
         }
 
-        public int? EditStockQuantity
-        {
-            get { return editStockQuantity; }
-            set
-            {
-                editStockQuantity = value;
-                OnPropertyChanged(nameof(EditStockQuantity));
-                SaveEditCommand.RaiseCanExecuteChanged();
-            }
-        }
-
         public string EditDescription
         {
             get { return editDescription; }
@@ -245,13 +232,13 @@ namespace gentech_services.ViewsModels
         }
 
         // View Product Properties
-        public string ViewSKU
+        public string ViewProductCode
         {
-            get { return viewSku; }
+            get { return viewProductCode; }
             set
             {
-                viewSku = value;
-                OnPropertyChanged(nameof(ViewSKU));
+                viewProductCode = value;
+                OnPropertyChanged(nameof(ViewProductCode));
             }
         }
 
@@ -292,6 +279,19 @@ namespace gentech_services.ViewsModels
             {
                 viewStock = value;
                 OnPropertyChanged(nameof(ViewStock));
+            }
+        }
+
+        public string ViewLowStockLevel
+        {
+            get { return viewLowStockLevel?.ToString() ?? "0"; }
+            set
+            {
+                if (int.TryParse(value, out int level))
+                {
+                    viewLowStockLevel = level;
+                }
+                OnPropertyChanged(nameof(ViewLowStockLevel));
             }
         }
 
@@ -487,10 +487,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 1,
                     Name = "LENOVO LEGION 3",
-                    SKU = "83M00051PH",
+                    ProductCode = "P2512001",
                     CategoryName = "LAPTOP",
                     Price = 49999m,
                     StockQuanity = 300,
+                    LowStockLevel = 10,
                     IsActive = true,
                     Description = "High Performing Laptop",
                     CreatedAt = DateTime.Now.AddMonths(-6)
@@ -499,10 +500,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 2,
                     Name = "Gaming Chair",
-                    SKU = "GC-2024-BLK",
+                    ProductCode = "P2512002",
                     CategoryName = "Accessories",
                     Price = 15999m,
                     StockQuanity = 8,
+                    LowStockLevel = 5,
                     IsActive = true,
                     Description = "Ergonomic gaming chair with lumbar support",
                     CreatedAt = DateTime.Now.AddMonths(-5)
@@ -511,10 +513,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 3,
                     Name = "GTX 7090",
-                    SKU = "GPU-GTX7090-24GB",
+                    ProductCode = "P2512003",
                     CategoryName = "Parts",
                     Price = 89990m,
                     StockQuanity = 5,
+                    LowStockLevel = 3,
                     IsActive = true,
                     Description = "High-end graphics card for gaming",
                     CreatedAt = DateTime.Now.AddMonths(-4)
@@ -523,10 +526,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 4,
                     Name = "Mechanical Keyboard RGB",
-                    SKU = "KB-MECH-RGB-001",
+                    ProductCode = "P2512004",
                     CategoryName = "Accessories",
                     Price = 8990m,
                     StockQuanity = 45,
+                    LowStockLevel = 20,
                     IsActive = true,
                     Description = "RGB mechanical keyboard with blue switches",
                     CreatedAt = DateTime.Now.AddMonths(-4)
@@ -535,10 +539,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 5,
                     Name = "Wireless Gaming Mouse",
-                    SKU = "MS-WGAME-001",
+                    ProductCode = "P2512005",
                     CategoryName = "Accessories",
                     Price = 3490m,
                     StockQuanity = 60,
+                    LowStockLevel = 25,
                     IsActive = true,
                     Description = "Wireless gaming mouse with 16000 DPI",
                     CreatedAt = DateTime.Now.AddMonths(-3)
@@ -547,10 +552,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 6,
                     Name = "RAM DDR5 32GB Kit",
-                    SKU = "RAM-DDR5-32GB-KIT",
+                    ProductCode = "P2512006",
                     CategoryName = "Parts",
                     Price = 12990m,
                     StockQuanity = 25,
+                    LowStockLevel = 10,
                     IsActive = true,
                     Description = "High-speed DDR5 RAM 32GB (2x16GB) kit",
                     CreatedAt = DateTime.Now.AddMonths(-3)
@@ -559,10 +565,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 7,
                     Name = "SSD NVMe 2TB",
-                    SKU = "SSD-NVM-2TB-001",
+                    ProductCode = "P2512007",
                     CategoryName = "Parts",
                     Price = 10490m,
                     StockQuanity = 18,
+                    LowStockLevel = 8,
                     IsActive = true,
                     Description = "2TB NVMe SSD with 7000MB/s read speed",
                     CreatedAt = DateTime.Now.AddMonths(-2)
@@ -571,10 +578,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 8,
                     Name = "27\" 4K Monitor",
-                    SKU = "MON-4K-27-001",
+                    ProductCode = "P2512008",
                     CategoryName = "Electronics",
                     Price = 28990m,
                     StockQuanity = 12,
+                    LowStockLevel = 5,
                     IsActive = true,
                     Description = "27-inch 4K IPS monitor with 144Hz",
                     CreatedAt = DateTime.Now.AddMonths(-2)
@@ -583,10 +591,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 9,
                     Name = "CPU Ryzen 9 7950X",
-                    SKU = "CPU-AMD-7950X",
+                    ProductCode = "P2512009",
                     CategoryName = "Parts",
                     Price = 35990m,
                     StockQuanity = 7,
+                    LowStockLevel = 4,
                     IsActive = true,
                     Description = "16-core 32-thread flagship processor",
                     CreatedAt = DateTime.Now.AddMonths(-1)
@@ -595,10 +604,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 10,
                     Name = "Motherboard X670E",
-                    SKU = "MB-AMD-X670E",
+                    ProductCode = "P2512010",
                     CategoryName = "Parts",
                     Price = 18990m,
                     StockQuanity = 15,
+                    LowStockLevel = 8,
                     IsActive = true,
                     Description = "ATX motherboard for AMD Ryzen 7000 series",
                     CreatedAt = DateTime.Now.AddMonths(-1)
@@ -607,10 +617,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 11,
                     Name = "Power Supply 850W Gold",
-                    SKU = "PSU-850W-GOLD",
+                    ProductCode = "P2512011",
                     CategoryName = "Parts",
                     Price = 7490m,
                     StockQuanity = 22,
+                    LowStockLevel = 10,
                     IsActive = true,
                     Description = "850W 80+ Gold certified modular PSU",
                     CreatedAt = DateTime.Now.AddDays(-25)
@@ -619,10 +630,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 12,
                     Name = "PC Case Mid Tower",
-                    SKU = "CASE-MID-RGB-001",
+                    ProductCode = "P2512012",
                     CategoryName = "Accessories",
                     Price = 5990m,
                     StockQuanity = 30,
+                    LowStockLevel = 15,
                     IsActive = true,
                     Description = "Mid tower case with tempered glass and RGB",
                     CreatedAt = DateTime.Now.AddDays(-20)
@@ -631,10 +643,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 13,
                     Name = "CPU Cooler AIO 360mm",
-                    SKU = "COOL-AIO-360",
+                    ProductCode = "P2512013",
                     CategoryName = "Parts",
                     Price = 9990m,
                     StockQuanity = 14,
+                    LowStockLevel = 6,
                     IsActive = true,
                     Description = "360mm AIO liquid cooler with RGB fans",
                     CreatedAt = DateTime.Now.AddDays(-15)
@@ -643,10 +656,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 14,
                     Name = "Webcam 4K",
-                    SKU = "CAM-4K-001",
+                    ProductCode = "P2512014",
                     CategoryName = "Accessories",
                     Price = 4990m,
                     StockQuanity = 38,
+                    LowStockLevel = 20,
                     IsActive = true,
                     Description = "4K webcam with auto-focus and noise reduction",
                     CreatedAt = DateTime.Now.AddDays(-10)
@@ -655,10 +669,11 @@ namespace gentech_services.ViewsModels
                 {
                     ProductID = 15,
                     Name = "Headset 7.1 Surround",
-                    SKU = "HS-71-RGB-001",
+                    ProductCode = "P2512015",
                     CategoryName = "Accessories",
                     Price = 6490m,
                     StockQuanity = 42,
+                    LowStockLevel = 20,
                     IsActive = true,
                     Description = "7.1 surround sound gaming headset",
                     CreatedAt = DateTime.Now.AddDays(-5)
@@ -670,7 +685,8 @@ namespace gentech_services.ViewsModels
 
         private void UpdateLowStockAlert()
         {
-            var lowStock = allProducts.Where(p => p.StockQuanity <= 10).ToList();
+            // Use each product's LowStockLevel threshold instead of hardcoded value
+            var lowStock = allProducts.Where(p => p.StockQuanity <= p.LowStockLevel).ToList();
             LowStockProducts = new ObservableCollection<ProductViewModel>(lowStock);
             HasLowStockItems = lowStock.Any();
         }
@@ -687,7 +703,7 @@ namespace gentech_services.ViewsModels
                 var filtered = allProducts.Where(p =>
                     p.ProductID.ToString().Contains(search) ||
                     p.Name.ToLower().Contains(search) ||
-                    p.SKU.ToLower().Contains(search) ||
+                    (p.ProductCode != null && p.ProductCode.ToLower().Contains(search)) ||
                     p.CategoryName.ToLower().Contains(search)
                 ).ToList();
 
@@ -709,19 +725,44 @@ namespace gentech_services.ViewsModels
         private void ClearAddForm()
         {
             ProductName = string.Empty;
-            SKU = string.Empty;
             SelectedCategory = null;
             Price = null;
-            StockQuantity = null;
+            LowStockLevel = null;
             Description = string.Empty;
+        }
+
+        private string GenerateProductCode()
+        {
+            // Format: PYYMM XXX (e.g., P2512001)
+            DateTime now = DateTime.Now;
+            string yearMonth = now.ToString("yyMM"); // e.g., "2512" for December 2025
+
+            // Find the next sequential number for this month
+            string prefix = $"P{yearMonth}";
+            int maxSeq = 0;
+
+            foreach (var product in allProducts)
+            {
+                if (product.ProductCode != null && product.ProductCode.StartsWith(prefix))
+                {
+                    string seqPart = product.ProductCode.Substring(prefix.Length);
+                    if (int.TryParse(seqPart, out int seq))
+                    {
+                        if (seq > maxSeq) maxSeq = seq;
+                    }
+                }
+            }
+
+            int nextSeq = maxSeq + 1;
+            return $"{prefix}{nextSeq:000}"; // e.g., "P2512001"
         }
 
         private bool CanAddProduct()
         {
             return !string.IsNullOrWhiteSpace(ProductName) &&
-                   !string.IsNullOrWhiteSpace(SKU) &&
                    !string.IsNullOrWhiteSpace(SelectedCategory) &&
-                   Price.HasValue && Price.Value > 0;
+                   Price.HasValue && Price.Value > 0 &&
+                   LowStockLevel.HasValue && LowStockLevel.Value >= 0;
         }
 
         private void AddProduct()
@@ -732,10 +773,11 @@ namespace gentech_services.ViewsModels
             {
                 ProductID = nextID,
                 Name = ProductName.Trim(),
-                SKU = SKU.Trim(),
+                ProductCode = GenerateProductCode(), // Auto-generate product code
                 CategoryName = SelectedCategory,
                 Price = Price.Value,
                 StockQuanity = 0, // Default stock quantity
+                LowStockLevel = LowStockLevel.Value,
                 IsActive = true,
                 Description = Description?.Trim() ?? string.Empty,
                 CreatedAt = DateTime.Now
@@ -745,7 +787,7 @@ namespace gentech_services.ViewsModels
             Products.Add(newProduct);
             UpdateLowStockAlert();
 
-            MessageBox.Show($"Product '{newProduct.Name}' has been added successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Product '{newProduct.Name}' has been added successfully.\nProduct Code: {newProduct.ProductCode}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
             CloseAddModal();
         }
@@ -757,10 +799,10 @@ namespace gentech_services.ViewsModels
             SelectedProduct = product;
 
             EditProductName = product.Name;
-            EditSKU = product.SKU;
+            EditProductCode = product.ProductCode; // Read-only, just for display
             EditSelectedCategory = product.CategoryName;
             EditPrice = product.Price;
-            EditStockQuantity = product.StockQuanity;
+            EditLowStockLevel = product.LowStockLevel;
             EditDescription = product.Description;
 
             IsEditModalVisible = true;
@@ -769,19 +811,18 @@ namespace gentech_services.ViewsModels
         private void ClearEditForm()
         {
             EditProductName = string.Empty;
-            EditSKU = string.Empty;
+            EditProductCode = string.Empty;
             EditSelectedCategory = null;
             EditPrice = null;
-            EditStockQuantity = null;
+            EditLowStockLevel = null;
             EditDescription = string.Empty;
         }
 
         private bool CanSaveEdit()
         {
             return !string.IsNullOrWhiteSpace(EditProductName) &&
-                   !string.IsNullOrWhiteSpace(EditSKU) &&
                    EditPrice.HasValue && EditPrice.Value > 0 &&
-                   EditStockQuantity.HasValue && EditStockQuantity.Value >= 0;
+                   EditLowStockLevel.HasValue && EditLowStockLevel.Value >= 0;
         }
 
         private void SaveEdit()
@@ -789,9 +830,9 @@ namespace gentech_services.ViewsModels
             if (SelectedProduct == null) return;
 
             SelectedProduct.Name = EditProductName.Trim();
-            SelectedProduct.SKU = EditSKU.Trim();
+            // ProductCode is auto-generated and read-only, so we don't update it
             SelectedProduct.Price = EditPrice.Value;
-            SelectedProduct.StockQuanity = EditStockQuantity.Value;
+            SelectedProduct.LowStockLevel = EditLowStockLevel.Value;
             SelectedProduct.Description = EditDescription?.Trim() ?? string.Empty;
             SelectedProduct.CategoryName = EditSelectedCategory ?? SelectedProduct.CategoryName;
 
@@ -812,11 +853,12 @@ namespace gentech_services.ViewsModels
         {
             if (product == null) return;
 
-            ViewSKU = product.SKU;
+            ViewProductCode = product.ProductCode;
             ViewCategory = product.CategoryName;
-            ViewStatus = product.StockQuanity > 10 ? "On Stock" : "Low Stock";
+            ViewStatus = product.StockQuanity <= product.LowStockLevel ? "Low Stock" : "On Stock";
             ViewPrice = $"₱{product.Price:N0}";
             ViewStock = product.StockQuanity.ToString();
+            ViewLowStockLevel = product.LowStockLevel.ToString();
             ViewDescription = product.Description;
 
             IsViewModalVisible = true;
@@ -862,9 +904,6 @@ namespace gentech_services.ViewsModels
             if (SelectedProduct == null || !StockInQuantity.HasValue) return;
 
             SelectedProduct.StockQuanity += StockInQuantity.Value;
-
-            // Update the EditStockQuantity to reflect the new stock level
-            EditStockQuantity = SelectedProduct.StockQuanity;
 
             // Refresh the Products collection to trigger UI update
             var temp = Products;
@@ -918,9 +957,6 @@ namespace gentech_services.ViewsModels
 
             SelectedProduct.StockQuanity -= StockOutQuantity.Value;
 
-            // Update the EditStockQuantity to reflect the new stock level
-            EditStockQuantity = SelectedProduct.StockQuanity;
-
             // Refresh the Products collection to trigger UI update
             var temp = Products;
             Products = null;
@@ -969,10 +1005,11 @@ namespace gentech_services.ViewsModels
     {
         private int productID;
         private string name;
-        private string sku;
+        private string productCode;
         private string categoryName;
         private decimal price;
         private int stockQuanity;
+        private int lowStockLevel;
         private bool isActive;
         private string description;
         private DateTime createdAt;
@@ -997,13 +1034,23 @@ namespace gentech_services.ViewsModels
             }
         }
 
-        public string SKU
+        public string ProductCode
         {
-            get { return sku; }
+            get { return productCode; }
             set
             {
-                sku = value;
-                OnPropertyChanged(nameof(SKU));
+                productCode = value;
+                OnPropertyChanged(nameof(ProductCode));
+            }
+        }
+
+        public int LowStockLevel
+        {
+            get { return lowStockLevel; }
+            set
+            {
+                lowStockLevel = value;
+                OnPropertyChanged(nameof(LowStockLevel));
             }
         }
 

@@ -97,8 +97,8 @@ namespace gentech_services.Views.UserControls
                 TechnicianText.Text = "Unassigned";
             }
 
-            // Description - using service description
-            DescriptionText.Text = order.Service?.Description ?? "No description available";
+            // Description - using issue description from appointment
+            DescriptionText.Text = order.IssueDescription ?? "No description available";
 
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;
@@ -192,16 +192,8 @@ namespace gentech_services.Views.UserControls
                 TechnicianText.Text = "Unassigned";
             }
 
-            // Description - combine all service descriptions
-            var descriptions = new System.Collections.Generic.List<string>();
-            foreach (var order in orders)
-            {
-                if (!string.IsNullOrWhiteSpace(order.Service?.Description))
-                {
-                    descriptions.Add($"• {order.Service.Name}: {order.Service.Description}");
-                }
-            }
-            DescriptionText.Text = descriptions.Count > 0 ? string.Join("\n", descriptions) : "No description available";
+            // Description - using issue description from appointment (same for all orders in the same appointment)
+            DescriptionText.Text = firstOrder.IssueDescription ?? "No description available";
 
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;

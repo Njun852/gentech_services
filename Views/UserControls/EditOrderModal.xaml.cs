@@ -289,7 +289,8 @@ namespace gentech_services.Views.UserControls
                 Status = "Pending",
                 AppointmentDate = currentOrder.AppointmentDate,
                 Customer = currentOrder.Customer,
-                PaymentMethod = currentOrder.PaymentMethod
+                PaymentMethod = currentOrder.PaymentMethod,
+                IssueDescription = currentOrder.IssueDescription // Same issue description for all services in the appointment
             };
 
             // Add to the UI list
