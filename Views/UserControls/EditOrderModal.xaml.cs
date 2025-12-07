@@ -176,6 +176,16 @@ namespace gentech_services.Views.UserControls
             // Set selected technician
             SelectedTechnician = currentOrder.Technician;
 
+            // Disable technician selection if already assigned
+            if (currentOrder.Technician != null)
+            {
+                TechnicianComboBox.IsEnabled = false;
+            }
+            else
+            {
+                TechnicianComboBox.IsEnabled = true;
+            }
+
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;
         }
@@ -196,6 +206,16 @@ namespace gentech_services.Views.UserControls
                 // Determine new status and confirmation message
                 if (serviceItem.Status == "Pending")
                 {
+                    // Validate that a technician is assigned before allowing status change to Ongoing
+                    if (currentOrder.Technician == null)
+                    {
+                        MessageBox.Show("Cannot set status to Ongoing without assigning a technician first.",
+                            "Technician Required",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        return;
+                    }
+
                     newStatus = "Ongoing";
                     confirmMessage = "Are you sure you want to set this service to Ongoing?";
                 }
@@ -264,6 +284,23 @@ namespace gentech_services.Views.UserControls
 
         private void TechnicianComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Prevent changing technician if already assigned
+            if (currentOrder != null && currentOrder.Technician != null && e.AddedItems.Count > 0)
+            {
+                var newTechnician = e.AddedItems[0] as User;
+                if (newTechnician != null && newTechnician.UserID != currentOrder.Technician.UserID)
+                {
+                    MessageBox.Show("Cannot change technician once assigned.",
+                        "Technician Already Assigned",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+
+                    // Revert to original technician
+                    SelectedTechnician = currentOrder.Technician;
+                    return;
+                }
+            }
+
             // Only auto-save if we have a current order (not during initial load)
             if (currentOrder != null && SelectedTechnician != null)
             {

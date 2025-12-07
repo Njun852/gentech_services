@@ -178,9 +178,15 @@ namespace gentech_services.Services
                 if (orderItem == null)
                     throw new InvalidOperationException($"Product with ID {returnItem.ProductID} not found in this order.");
 
-                if (returnItem.Quantity > orderItem.Quantity)
-                    throw new InvalidOperationException($"Cannot return more items than ordered for product ID {returnItem.ProductID}.");
+                // Check if trying to return more than available (total - already returned)
+                int availableToReturn = orderItem.Quantity - orderItem.ReturnedQuantity;
+                if (returnItem.Quantity > availableToReturn)
+                    throw new InvalidOperationException($"Cannot return more items than available. Available: {availableToReturn}, Requested: {returnItem.Quantity}");
 
+                // Update returned quantity in the database
+                orderItem.ReturnedQuantity += returnItem.Quantity;
+
+                // Restore stock and log to inventory
                 await _productService.StockInAsync(
                     returnItem.ProductID,
                     returnItem.Quantity,
@@ -189,23 +195,33 @@ namespace gentech_services.Services
                 );
             }
 
-            // Determine if fully or partially returned
+            // Determine if fully or partially returned based on ReturnedQuantity
             bool fullyReturned = true;
+            bool anyReturned = false;
             if (order.ProductOrderItems != null)
             {
                 foreach (var orderItem in order.ProductOrderItems)
                 {
-                    var returnItem = returnItems.FirstOrDefault(ri => ri.ProductID == orderItem.ProductID);
-                    if (returnItem.ProductID == 0 || returnItem.Quantity < orderItem.Quantity)
+                    if (orderItem.ReturnedQuantity > 0)
+                    {
+                        anyReturned = true;
+                    }
+                    if (orderItem.ReturnedQuantity < orderItem.Quantity)
                     {
                         fullyReturned = false;
-                        break;
                     }
                 }
             }
 
             // Update order status
-            order.Status = fullyReturned ? "Fully Returned" : "Partially Returned";
+            if (fullyReturned && anyReturned)
+            {
+                order.Status = "Fully Returned";
+            }
+            else if (anyReturned)
+            {
+                order.Status = "Partially Returned";
+            }
             await _productOrderRepository.UpdateAsync(order);
 
             return order;

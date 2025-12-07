@@ -207,7 +207,7 @@ namespace gentech_services.ViewsModels
                                 Name = oi.Product?.Name ?? "Unknown Product",
                                 Category = oi.Product?.Category?.Name ?? "Uncategorized",
                                 Quantity = oi.Quantity,
-                                ReturnedQuantity = 0,
+                                ReturnedQuantity = oi.ReturnedQuantity,
                                 UnitPrice = oi.UnitPrice,
                                 Subtotal = oi.TotalPrice
                             }) ?? Enumerable.Empty<OrderDetailItem>()
@@ -706,6 +706,7 @@ namespace gentech_services.ViewsModels
             {
                 quantity = value;
                 OnPropertyChanged(nameof(Quantity));
+                OnPropertyChanged(nameof(QuantityDisplay));
             }
         }
 
@@ -717,10 +718,23 @@ namespace gentech_services.ViewsModels
                 returnedQuantity = value;
                 OnPropertyChanged(nameof(ReturnedQuantity));
                 OnPropertyChanged(nameof(HasReturns));
+                OnPropertyChanged(nameof(QuantityDisplay));
             }
         }
 
         public bool HasReturns => returnedQuantity > 0;
+
+        public string QuantityDisplay
+        {
+            get
+            {
+                if (returnedQuantity > 0)
+                {
+                    return $"{quantity} ({returnedQuantity} returned)";
+                }
+                return quantity.ToString();
+            }
+        }
 
         public decimal UnitPrice
         {

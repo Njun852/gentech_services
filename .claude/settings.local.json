@@ -9,7 +9,8 @@
       "Bash(del InventoryManagementViewModel.cs)",
       "Bash(ren:*)",
       "Bash(Select-String -Pattern \"error|warning|Build succeeded|Build FAILED\")",
-      "Bash(dotnet build:*)"
+      "Bash(dotnet build:*)",
+      "Bash(dotnet ef migrations:*)"
     ],
     "deny": [],
     "ask": []
