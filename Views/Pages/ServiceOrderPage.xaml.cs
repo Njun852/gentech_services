@@ -52,6 +52,9 @@ namespace gentech_services.Views.Pages
                 ViewOrderModal.ShowModal(orders);
             };
 
+            // Inject ServiceOrderService into EditOrderModal
+            EditOrderModal.SetServiceOrderService(serviceOrderService);
+
             viewModel.ShowEditOrderModal = (orders, services, technicians) =>
             {
                 EditOrderModal.ShowModal(orders, services, technicians);
@@ -69,11 +72,11 @@ namespace gentech_services.Views.Pages
                 await viewModel.HandleEditOrderUpdate(updatedOrder);
             };
 
-            // Wire up callback for when a new service is added to an appointment
-            EditOrderModal.OnServiceAdded = (newServiceOrder) =>
+            // Wire up callback for when a new service item is added to an order
+            EditOrderModal.OnServiceItemAdded = () =>
             {
-                // Add to ViewModel's collections to persist the data
-                viewModel.AddServiceOrder(newServiceOrder);
+                // Refresh the grouped orders to reflect the new service item
+                viewModel.RefreshGroupedOrders();
             };
 
             // Wire up save changes callback for Edit Appointment Modal

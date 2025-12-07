@@ -19,7 +19,7 @@ namespace gentech_services.Repositories
         public async Task<User?> AuthenticateAsync(string username, string pin)
         {
             return await _dbSet.FirstOrDefaultAsync(u =>
-                u.Username == username &&
+                u.Username.ToLower() == username.ToLower() &&
                 u.Pin == pin &&
                 u.IsActive);
         }

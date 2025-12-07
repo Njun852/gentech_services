@@ -3,11 +3,19 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:conv="clr-namespace:gentech_services.Converters"
              xmlns:local="clr-namespace:gentech_services.Views.Pages"
              mc:Ignorable="d"
              d:DesignHeight="900" d:DesignWidth="1400" Background="White">
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <Style TargetType="TextBlock" x:Key="ErrorTextBlock">
+            <Setter Property="Foreground" Value="#FF0000"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Margin" Value="0,-3,0,4"/>
+        </Style>
     </UserControl.Resources>
     <Grid Margin="16,12">
             <Grid.RowDefinitions>
@@ -466,26 +474,24 @@
                                      Background="Transparent"
                                      VerticalContentAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="{Binding NameError}"
-                                   FontSize="9"
-                                   Foreground="Red"
-                                   Margin="4,0,0,5"
-                                   Visibility="{Binding NameError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            <TextBlock Text="{Binding NameError}"
+                               Style="{StaticResource ErrorTextBlock}"
+                               Visibility="{Binding NameError, Converter={StaticResource StringToVisibilityConverter}}"/>
 
-                        <Border Background="White"
+                                <Border Background="White"
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 Margin="0,0,0,2">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Setter Property="BorderBrush" Value="Black"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding EmailError, Converter={StaticResource BooleanToVisibilityConverter}}" Value="Visible">
-                                            <Setter Property="BorderBrush" Value="Red"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="BorderBrush" Value="Black"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding EmailError, Converter={StaticResource BooleanToVisibilityConverter}}" Value="Visible">
+                                                    <Setter Property="BorderBrush" Value="Red"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                             <TextBox Style="{StaticResource OutlineTextBox}"
                                      Tag="Email Address"
                                      Text="{Binding CustomerEmail, UpdateSourceTrigger=PropertyChanged}"
@@ -495,13 +501,12 @@
                                      Background="Transparent"
                                      VerticalContentAlignment="Center"/>
                         </Border>
-                        <TextBlock Text="{Binding EmailError}"
-                                   FontSize="9"
-                                   Foreground="Red"
-                                   Margin="4,0,0,5"
-                                   Visibility="{Binding EmailError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        
+                            <TextBlock Text="{Binding EmailError}"
+                                   Style="{StaticResource ErrorTextBlock}"
+                                   Visibility="{Binding EmailError, Converter={StaticResource StringToVisibilityConverter}}"/>
 
-                        <Border Background="White"
+                            <Border Background="White"
                                 BorderThickness="1"
                                 CornerRadius="6"
                                 Margin="0,0,0,2">
@@ -525,11 +530,9 @@
                                      VerticalContentAlignment="Center"/>
                         </Border>
                         <TextBlock Text="{Binding PhoneError}"
-                                   FontSize="9"
-                                   Foreground="Red"
-                                   Margin="4,0,0,0"
-                                   Visibility="{Binding PhoneError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                    </StackPanel>
+                               Style="{StaticResource ErrorTextBlock}"
+                               Visibility="{Binding PhoneError, Converter={StaticResource StringToVisibilityConverter}}"/>
+                        </StackPanel>
                     </StackPanel>
                 </Grid>
             </Grid>

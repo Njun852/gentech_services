@@ -4,11 +4,15 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using gentech_services.MVVM;
+using gentech_services.Services;
+using gentech_services.Models;
 
 namespace gentech_services.ViewsModels
 {
     internal class ProductOrderHistoryViewModel : ViewModelBase
     {
+        private readonly ProductOrderService _productOrderService;
+
         private ObservableCollection<ProductOrderHistoryItem> allOrders;
         private ObservableCollection<ProductOrderHistoryItem> filteredOrders;
         private string searchText;
@@ -159,8 +163,10 @@ namespace gentech_services.ViewsModels
         public RelayCommand CloseVoidModalCommand { get; private set; }
         public RelayCommand VoidTransactionCommand { get; private set; }
 
-        public ProductOrderHistoryViewModel()
+        public ProductOrderHistoryViewModel(ProductOrderService productOrderService)
         {
+            _productOrderService = productOrderService;
+
             ShowOrderDetailsCommand = new RelayCommand(obj => ShowOrderDetails(obj as ProductOrderHistoryItem));
             CloseOrderDetailsCommand = new RelayCommand(obj => CloseOrderDetails());
             ShowReturnModalCommand = new RelayCommand(obj => ShowReturnModal(obj as ProductOrderHistoryItem));
@@ -174,10 +180,52 @@ namespace gentech_services.ViewsModels
 
             OrderDetailsItems = new ObservableCollection<OrderDetailItem>();
             ReturnItems = new ObservableCollection<ReturnItem>();
-            LoadOrders();
+            _ = LoadOrdersFromDatabase();
         }
 
-        private void LoadOrders()
+        private async System.Threading.Tasks.Task LoadOrdersFromDatabase()
+        {
+            try
+            {
+                var orders = await _productOrderService.GetAllProductOrdersAsync();
+
+                allOrders = new ObservableCollection<ProductOrderHistoryItem>(
+                    orders.Select(o => new ProductOrderHistoryItem
+                    {
+                        OrderNumber = $"PO-{o.ProductOrderID:0000}",
+                        CustomerName = o.FullName,
+                        OrderDate = o.CreatedAt,
+                        TotalItems = o.ProductOrderItems?.Sum(oi => oi.Quantity) ?? 0,
+                        TotalCost = o.TotalAmount,
+                        PaymentStatus = o.Status,
+                        ProductOrderID = o.ProductOrderID,
+                        Items = new ObservableCollection<OrderDetailItem>(
+                            o.ProductOrderItems?.Select(oi => new OrderDetailItem
+                            {
+                                ProductId = oi.Product?.SKU ?? $"P{oi.ProductID}",
+                                ProductIDInt = oi.ProductID,
+                                Name = oi.Product?.Name ?? "Unknown Product",
+                                Category = oi.Product?.Category?.Name ?? "Uncategorized",
+                                Quantity = oi.Quantity,
+                                ReturnedQuantity = 0,
+                                UnitPrice = oi.UnitPrice,
+                                Subtotal = oi.TotalPrice
+                            }) ?? Enumerable.Empty<OrderDetailItem>()
+                        )
+                    })
+                );
+
+                FilteredOrders = new ObservableCollection<ProductOrderHistoryItem>(allOrders);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load orders: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                allOrders = new ObservableCollection<ProductOrderHistoryItem>();
+                FilteredOrders = new ObservableCollection<ProductOrderHistoryItem>();
+            }
+        }
+
+        private void LoadOrdersFallback()
         {
             allOrders = new ObservableCollection<ProductOrderHistoryItem>
             {
@@ -383,7 +431,7 @@ namespace gentech_services.ViewsModels
             TotalRefund = ReturnItems.Sum(item => item.ReturnQuantity * item.UnitPrice);
         }
 
-        private void ProcessReturn()
+        private async void ProcessReturn()
         {
             var totalItems = ReturnItems.Sum(item => item.ReturnQuantity);
             if (totalItems == 0)
@@ -400,24 +448,34 @@ namespace gentech_services.ViewsModels
 
             if (result == MessageBoxResult.Yes)
             {
-                // Update the returned quantities for each item
-                foreach (var returnItem in ReturnItems.Where(r => r.ReturnQuantity > 0))
+                try
                 {
-                    var orderItem = currentSelectedOrder.Items.FirstOrDefault(i => i.Name == returnItem.ProductName);
-                    if (orderItem != null)
-                    {
-                        orderItem.ReturnedQuantity += returnItem.ReturnQuantity;
-                    }
+                    // Prepare return items for service
+                    var returnItemsList = ReturnItems
+                        .Where(r => r.ReturnQuantity > 0)
+                        .Select(r => {
+                            var orderItem = currentSelectedOrder.Items.FirstOrDefault(i => i.Name == r.ProductName);
+                            return (ProductID: orderItem?.ProductIDInt ?? 0, Quantity: r.ReturnQuantity);
+                        })
+                        .Where(r => r.ProductID > 0)
+                        .ToList();
+
+                    // Process return through service (will restore stock and log to inventory)
+                    await _productOrderService.ProcessReturnAsync(
+                        currentSelectedOrder.ProductOrderID,
+                        returnItemsList
+                    );
+
+                    // Reload orders from database to get updated status
+                    await LoadOrdersFromDatabase();
+
+                    MessageBox.Show("Return processed successfully!\n\nStock has been restored and logged in inventory.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CloseReturnModal();
                 }
-
-                // Update payment status based on returned items
-                UpdateOrderPaymentStatus(currentSelectedOrder);
-
-                // Refresh the filtered orders to show updated status
-                ApplyFilters();
-
-                MessageBox.Show("Return processed successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                CloseReturnModal();
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to process return: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -476,26 +534,33 @@ namespace gentech_services.ViewsModels
             SelectedOrderForVoid = null;
         }
 
-        private void VoidTransaction()
+        private async void VoidTransaction()
         {
             if (SelectedOrderForVoid == null) return;
 
             var result = MessageBox.Show(
-                "Are you sure you want to void this transaction? This action cannot be undone.",
+                "Are you sure you want to void this transaction?\n\nThis will restore all stock quantities and cannot be undone.",
                 "Confirm Void Transaction",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes)
             {
-                // Update payment status to Voided
-                SelectedOrderForVoid.PaymentStatus = "Voided";
+                try
+                {
+                    // Void order through service (will restore stock and log to inventory)
+                    await _productOrderService.VoidOrderAsync(SelectedOrderForVoid.ProductOrderID);
 
-                // Refresh the filtered orders to show updated status
-                ApplyFilters();
+                    // Reload orders from database to get updated status
+                    await LoadOrdersFromDatabase();
 
-                MessageBox.Show("Transaction voided successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                CloseVoidModal();
+                    MessageBox.Show("Transaction voided successfully!\n\nStock has been restored and logged in inventory.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    CloseVoidModal();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to void transaction: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
     }
@@ -510,6 +575,8 @@ namespace gentech_services.ViewsModels
         private decimal totalCost;
         private string paymentStatus;
         private ObservableCollection<OrderDetailItem> items;
+
+        public int ProductOrderID { get; set; }
 
         public string OrderNumber
         {
@@ -599,6 +666,8 @@ namespace gentech_services.ViewsModels
         private int returnedQuantity;
         private decimal unitPrice;
         private decimal subtotal;
+
+        public int ProductIDInt { get; set; }
 
         public string ProductId
         {

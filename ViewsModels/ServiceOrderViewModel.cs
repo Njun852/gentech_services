@@ -840,11 +840,24 @@ namespace gentech_services.ViewsModels
             PhoneError = string.Empty;
             ServiceError = string.Empty;
             DateError = string.Empty;
+            
 
-            if (string.IsNullOrWhiteSpace(CustomerName))
+            
+            if (string.IsNullOrWhiteSpace(customerName))
             {
-                CustomerNameError = "Customer name is required";
+                CustomerNameError = "Name is required";
                 isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerName,
+                @"^[A-Za-z]+(\s[A-Za-z]+)*$"))
+            {
+                CustomerNameError = "Name should be all letters";
+                isValid = false;
+            }
+            else
+            {
+                CustomerNameError = string.Empty;
+               
             }
 
             if (string.IsNullOrWhiteSpace(Email))
@@ -852,18 +865,20 @@ namespace gentech_services.ViewsModels
                 EmailError = "Email is required";
                 isValid = false;
             }
-            else if (!IsValidEmail(Email))
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(Email,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             {
                 EmailError = "Invalid email format";
-                isValid = false;
             }
+            
 
             if (string.IsNullOrWhiteSpace(Phone))
             {
                 PhoneError = "Phone number is required";
                 isValid = false;
             }
-            else if (!IsValidPhone(Phone))
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(Phone,
+                 @"^(?:\+63|63|0)?(?:9\d{9}|(?:2|[3-8]\d)\d{7}|\d{7,8})$"))
             {
                 PhoneError = "Invalid phone number format";
                 isValid = false;

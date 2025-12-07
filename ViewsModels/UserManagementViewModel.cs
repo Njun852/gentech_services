@@ -28,6 +28,12 @@ namespace gentech_services.ViewsModels
         private string editPin;
         private string editRole;
 
+        //validation properties
+        private string fullNameError;
+        private string usernameError;
+        private string pinError;
+
+
         public ObservableCollection<User> Users
         {
             get { return users; }
@@ -56,6 +62,7 @@ namespace gentech_services.ViewsModels
             get { return currentUserName; }
             set { currentUserName = value; OnPropertyChanged(); }
         }
+        
 
         public string CurrentUserRole
         {
@@ -65,20 +72,38 @@ namespace gentech_services.ViewsModels
 
         public string FullName
         {
-            get { return fullName; }
-            set { fullName = value; OnPropertyChanged(); }
+            get => fullName;
+            set
+            {
+                fullName = value;
+                OnPropertyChanged();
+                ValidateFullName();
+                AddUserCommand.RaiseCanExecuteChanged();
+            }
         }
 
         public string Username
         {
-            get { return username; }
-            set { username = value; OnPropertyChanged(); }
+            get => username;
+            set
+            {
+                username = value;
+                OnPropertyChanged();
+                ValidateUsername();
+                AddUserCommand.RaiseCanExecuteChanged();
+            }
         }
 
         public string PIN
         {
-            get { return pin; }
-            set { pin = value; OnPropertyChanged(); }
+            get => pin;
+            set
+            {
+                pin = value;
+                OnPropertyChanged();
+                ValidatePIN();
+                AddUserCommand.RaiseCanExecuteChanged();
+            }
         }
 
         public string SelectedRole
@@ -109,6 +134,25 @@ namespace gentech_services.ViewsModels
         {
             get { return editRole; }
             set { editRole = value; OnPropertyChanged(); }
+        }
+
+        
+        public string FullNameError
+        {
+            get => fullNameError;
+            set { fullNameError = value; OnPropertyChanged(); }
+        }
+
+        public string UsernameError
+        {
+            get => usernameError;
+            set { usernameError = value; OnPropertyChanged(); }
+        }
+
+        public string PINError
+        {
+            get => pinError;
+            set { pinError = value; OnPropertyChanged(); }
         }
 
         public RelayCommand AddUserCommand { get; private set; }
@@ -334,6 +378,36 @@ namespace gentech_services.ViewsModels
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
+        }
+
+        private void ValidateFullName()
+        {
+            if (string.IsNullOrWhiteSpace(FullName))
+                FullNameError = "Full Name is required.";
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(FullName, @"^[a-zA-Z\s]{2,50}$"))
+                FullNameError = "Full Name must be 2-50 letters.";
+            else
+                FullNameError = string.Empty;
+        }
+
+        private void ValidateUsername()
+        {
+            if (string.IsNullOrWhiteSpace(Username))
+                UsernameError = "Username is required.";
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(Username, @"^[a-zA-Z0-9]{4,20}$"))
+                UsernameError = "Username must be 4-20 alphanumeric characters.";
+            else
+                UsernameError = string.Empty;
+        }
+
+        private void ValidatePIN()
+        {
+            if (string.IsNullOrWhiteSpace(PIN))
+                PINError = "PIN is required.";
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(PIN, @"^\d{4,6}$"))
+                PINError = "PIN must be 4-6 digits.";
+            else
+                PINError = string.Empty;
         }
     }
 }

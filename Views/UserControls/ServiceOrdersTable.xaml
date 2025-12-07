@@ -47,7 +47,7 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Margin="0,0,10,0">
                 <Grid.Resources>
                     <Style TargetType="TextBlock">
                         <Setter Property="Padding" Value="2"/>
