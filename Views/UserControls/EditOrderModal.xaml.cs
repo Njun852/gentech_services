@@ -1,4 +1,5 @@
 using gentech_services.Models;
+using gentech_services.Services;
 using ProductServicesManagementSystem.Models;
 using System;
 using System.Collections.ObjectModel;
@@ -16,6 +17,7 @@ namespace gentech_services.Views.UserControls
         private ObservableCollection<Service> availableServices;
         private ObservableCollection<User> availableTechnicians;
         private User selectedTechnician;
+        private ServiceOrderService _serviceOrderService;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -32,7 +34,7 @@ namespace gentech_services.Views.UserControls
         }
 
         public Action<ServiceOrder> OnSaveChanges { get; set; }
-        public Action<ServiceOrder> OnServiceAdded { get; set; }
+        public Action OnServiceItemAdded { get; set; }
 
         public EditOrderModal()
         {
@@ -44,10 +46,15 @@ namespace gentech_services.Views.UserControls
             TechnicianComboBox.SelectionChanged += TechnicianComboBox_SelectionChanged;
 
             // Wire up select service modal callback
-            SelectServiceModalControl.OnServiceSelected = (selectedService) =>
+            SelectServiceModalControl.OnServiceSelected = async (selectedService) =>
             {
-                AddServiceToOrder(selectedService);
+                await AddServiceToOrder(selectedService);
             };
+        }
+
+        public void SetServiceOrderService(ServiceOrderService serviceOrderService)
+        {
+            _serviceOrderService = serviceOrderService;
         }
 
         protected void OnPropertyChanged(string propertyName)
@@ -354,39 +361,46 @@ namespace gentech_services.Views.UserControls
             SelectServiceModalControl.ShowModal(unselectedServices);
         }
 
-        private void AddServiceToOrder(Service selectedService)
+        private async System.Threading.Tasks.Task AddServiceToOrder(Service selectedService)
         {
             if (selectedService == null || currentOrder == null) return;
 
-            // Create a new ServiceOrder for this service
-            var newServiceOrder = new ServiceOrder
+            if (_serviceOrderService == null)
             {
-                SaleID = currentOrder.SaleID,
-                Service = selectedService,
-                Technician = SelectedTechnician ?? currentOrder.Technician,
-                Status = "Pending",
-                AppointmentDate = currentOrder.AppointmentDate,
-                Customer = currentOrder.Customer,
-                PaymentMethod = currentOrder.PaymentMethod,
-                IssueDescription = currentOrder.IssueDescription // Same issue description for all services in the appointment
-            };
+                MessageBox.Show("Service order service not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
-            // Add to the UI list
-            orderServices.Add(new OrderServiceItem
+            try
             {
-                Service = selectedService,
-                Status = "Pending",
-                Technician = SelectedTechnician ?? currentOrder.Technician,
-                ServiceOrder = newServiceOrder
-            });
+                // Add the service item to the existing order in the database
+                var newItem = await _serviceOrderService.AddServiceItemToOrderAsync(
+                    currentOrder.ServiceOrderID,
+                    selectedService.ServiceID,
+                    quantity: 1
+                );
 
-            // Update total cost
-            UpdateTotalCost();
+                // Add to the UI list
+                orderServices.Add(new OrderServiceItem
+                {
+                    Service = selectedService,
+                    Status = "Pending",
+                    Technician = SelectedTechnician ?? currentOrder.Technician,
+                    ServiceOrder = currentOrder
+                });
 
-            // Notify parent to add to actual data collections
-            OnServiceAdded?.Invoke(newServiceOrder);
+                // Update total cost
+                UpdateTotalCost();
 
-            MessageBox.Show($"Service '{selectedService.Name}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Notify parent to refresh the display
+                OnServiceItemAdded?.Invoke();
+
+                MessageBox.Show($"Service '{selectedService.Name}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to add service: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

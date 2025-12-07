@@ -4,11 +4,16 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using gentech_services.MVVM;
+using gentech_services.Services;
+using gentech_services.Models;
 
 namespace gentech_services.ViewsModels
 {
     internal class ProductOrdersViewModel : ViewModelBase
     {
+        private readonly ProductService _productService;
+        private readonly ProductOrderService _productOrderService;
+
         private ObservableCollection<ProductCardViewModel> allProducts;
         private ObservableCollection<ProductCardViewModel> filteredProducts;
         private ObservableCollection<CartItemViewModel> cartItems;
@@ -191,8 +196,11 @@ namespace gentech_services.ViewsModels
         public RelayCommand ProcessPaymentCommand { get; private set; }
         public RelayCommand ClearCartCommand { get; private set; }
 
-        public ProductOrdersViewModel()
+        public ProductOrdersViewModel(ProductService productService, ProductOrderService productOrderService)
         {
+            _productService = productService;
+            _productOrderService = productOrderService;
+
             AddToCartCommand = new RelayCommand(obj => AddToCart(obj as ProductCardViewModel));
             RemoveFromCartCommand = new RelayCommand(obj => RemoveFromCart(obj as CartItemViewModel));
             IncreaseQuantityCommand = new RelayCommand(obj => IncreaseQuantity(obj as CartItemViewModel));
@@ -204,10 +212,38 @@ namespace gentech_services.ViewsModels
             cartItemCounter = 0;
             IsCartEmpty = true;
 
-            LoadProducts();
+            _ = LoadProductsFromDatabase();
         }
 
-        private void LoadProducts()
+        private async System.Threading.Tasks.Task LoadProductsFromDatabase()
+        {
+            try
+            {
+                var products = await _productService.GetActiveProductsAsync();
+                allProducts = new ObservableCollection<ProductCardViewModel>(
+                    products.Select(p => new ProductCardViewModel
+                    {
+                        ProductID = p.ProductID,
+                        Name = p.Name,
+                        CategoryName = p.Category?.Name ?? "Uncategorized",
+                        Price = p.Price,
+                        StockQuanity = p.StockQuantity,
+                        StockStatus = p.StockQuantity == 0 ? "Out of stock" :
+                                     p.StockQuantity <= p.LowStockLevel ? "Low stock" : "In stock"
+                    })
+                );
+
+                FilteredProducts = new ObservableCollection<ProductCardViewModel>(allProducts);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load products: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                allProducts = new ObservableCollection<ProductCardViewModel>();
+                FilteredProducts = new ObservableCollection<ProductCardViewModel>();
+            }
+        }
+
+        private void LoadProductsFallback()
         {
             allProducts = new ObservableCollection<ProductCardViewModel>
             {
@@ -585,7 +621,7 @@ namespace gentech_services.ViewsModels
         }
  
 
-        private void ProcessPayment()
+        private async void ProcessPayment()
         {
             if (!ValidateForm())
             {
@@ -606,15 +642,44 @@ namespace gentech_services.ViewsModels
 
             if (result == MessageBoxResult.Yes)
             {
-                MessageBox.Show(
-                    $"Payment processed successfully!\n\n" +
-                    $"Order ID: ORD-{DateTime.Now:yyyyMMddHHmmss}\n" +
-                    $"Total: ₱{total:N2}",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                try
+                {
+                    // Prepare order items
+                    var orderItems = cartItems.Select(ci => (
+                        ProductID: ci.ProductID,
+                        Quantity: ci.Quantity,
+                        UnitPrice: ci.UnitPrice
+                    )).ToList();
 
-                ClearCart();
+                    // Create product order in database
+                    var createdOrder = await _productOrderService.CreateProductOrderAsync(
+                        fullName: CustomerName.Trim(),
+                        email: CustomerEmail.Trim(),
+                        phone: CustomerPhone.Trim(),
+                        orderItems: orderItems
+                    );
+
+                    MessageBox.Show(
+                        $"Payment processed successfully!\n\n" +
+                        $"Order ID: PO-{createdOrder.ProductOrderID:0000}\n" +
+                        $"Total: ₱{total:N2}",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    // Refresh products to update stock quantities
+                    await LoadProductsFromDatabase();
+
+                    ClearCart();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Failed to process payment: {ex.Message}",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
             }
         }
 
