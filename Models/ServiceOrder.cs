@@ -1,47 +1,72 @@
-﻿using ProductServicesManagementSystem.Models;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace gentech_services.Models
 {
-    public class ServiceOrder : INotifyPropertyChanged
+    public class ServiceOrder
     {
-        private string status;
-
+        [Key]
         public int ServiceOrderID { get; set; }
-        public Service Service { get; set; }
-        public User Technician { get; set; }
-        public DateTime AppointmentDate { get; set; }
 
-        public string Status
+        [Required]
+        [MaxLength(200)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(255)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(20)]
+        public string Phone { get; set; } = string.Empty;
+
+        [Required]
+        public DateTime ScheduledAt { get; set; }
+
+        [Required]
+        [MaxLength(20)]
+        public string Status { get; set; } = "Pending"; // "Pending", "In Progress", "Completed", "Cancelled"
+
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        public string? DeviceDescription { get; set; } // Device Name / Description
+
+        public string? IssueNotes { get; set; } // Issue / Notes
+
+        // Navigation properties
+        public virtual ICollection<ServiceOrderItem> ServiceOrderItems { get; set; } = new List<ServiceOrderItem>();
+
+        // Backward compatibility properties (not mapped to database)
+        [NotMapped]
+        public string IssueDescription
         {
-            get { return status ?? "Pending"; }
-            set
-            {
-                if (status != value)
-                {
-                    status = value;
-                    OnPropertyChanged();
-                }
-            }
+            get => IssueNotes ?? string.Empty;
+            set => IssueNotes = value;
         }
 
-
-        public string PaymentMethod { get; set; }
-        public Customer Customer { get; set; }
-        public int SaleID { get; set; }
-        public string IssueDescription { get; set; }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        [NotMapped]
+        public DateTime AppointmentDate
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            get => ScheduledAt;
+            set => ScheduledAt = value;
         }
+
+        [NotMapped]
+        public int SaleID { get; set; } // Legacy property, not in new schema
+
+        [NotMapped]
+        public User? Technician { get; set; } // Legacy property
+
+        [NotMapped]
+        public Service? Service { get; set; } // Legacy property - now uses ServiceOrderItems
+
+        [NotMapped]
+        public string? PaymentMethod { get; set; } // Legacy property
+
+        [NotMapped]
+        public Customer? Customer { get; set; } // Legacy property - now uses FullName, Email, Phone
     }
 }

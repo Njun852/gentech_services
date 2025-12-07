@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using gentech_services.Services;
 
 namespace gentech_services.Views.UserControls
 {
@@ -26,6 +27,18 @@ namespace gentech_services.Views.UserControls
         public Sidebar()
         {
             InitializeComponent();
+            UpdateUserInfo();
+        }
+
+        public void UpdateUserInfo()
+        {
+            var currentUser = AuthenticationService.Instance.CurrentUser;
+            if (currentUser != null)
+            {
+                UserNameText.Text = currentUser.Name;
+                UserRoleText.Text = currentUser.Role;
+                UserInitialText.Text = AuthenticationService.Instance.GetUserInitial();
+            }
         }
         
 

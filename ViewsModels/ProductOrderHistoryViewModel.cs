@@ -22,6 +22,7 @@ namespace gentech_services.ViewsModels
         private decimal totalRefund;
         private bool isVoidModalVisible;
         private ProductOrderHistoryItem selectedOrderForVoid;
+        private ProductOrderHistoryItem currentSelectedOrder;
 
         public bool IsVoidModalVisible
         {
@@ -186,53 +187,84 @@ namespace gentech_services.ViewsModels
                     CustomerName = "Technician",
                     OrderDate = new DateTime(2025, 5, 25),
                     TotalItems = 3,
-                    TotalCost = 14.856m,
-                    PaymentStatus = "Paid"
+                    TotalCost = 33800m,
+                    PaymentStatus = "Paid",
+                    Items = new ObservableCollection<OrderDetailItem>
+                    {
+                        new OrderDetailItem { ProductId = "P2512001", Name = "AMD Ryzen 5 5600", Category = "Processor", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 8950, Subtotal = 17900 },
+                        new OrderDetailItem { ProductId = "P2512002", Name = "ASUS ROG STRIX B550-F", Category = "Motherboard", Quantity = 1, ReturnedQuantity = 0, UnitPrice = 9500, Subtotal = 9500 },
+                        new OrderDetailItem { ProductId = "P2512003", Name = "Corsair Vengeance 16GB DDR4", Category = "RAM", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 3200, Subtotal = 6400 }
+                    }
                 },
                 new ProductOrderHistoryItem
                 {
-                    OrderNumber = "PO-001",
-                    CustomerName = "Technician",
-                    OrderDate = new DateTime(2025, 5, 25),
-                    TotalItems = 3,
-                    TotalCost = 14.856m,
-                    PaymentStatus = "Paid"
+                    OrderNumber = "PO-002",
+                    CustomerName = "Walk-in Customer",
+                    OrderDate = new DateTime(2025, 5, 26),
+                    TotalItems = 2,
+                    TotalCost = 21800m,
+                    PaymentStatus = "Paid",
+                    Items = new ObservableCollection<OrderDetailItem>
+                    {
+                        new OrderDetailItem { ProductId = "P2512004", Name = "Samsung 970 EVO 1TB NVMe", Category = "Storage", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 6900, Subtotal = 13800 },
+                        new OrderDetailItem { ProductId = "P2512005", Name = "Cooler Master Hyper 212", Category = "Cooling", Quantity = 1, ReturnedQuantity = 0, UnitPrice = 2500, Subtotal = 2500 },
+                        new OrderDetailItem { ProductId = "P2512006", Name = "Corsair RM750x PSU", Category = "Power Supply", Quantity = 1, ReturnedQuantity = 0, UnitPrice = 5500, Subtotal = 5500 }
+                    }
                 },
                 new ProductOrderHistoryItem
                 {
-                    OrderNumber = "PO-001",
-                    CustomerName = "Technician",
+                    OrderNumber = "PO-003",
+                    CustomerName = "John Doe",
                     OrderDate = new DateTime(2025, 6, 9),
-                    TotalItems = 3,
-                    TotalCost = 14.856m,
-                    PaymentStatus = "Paid"
+                    TotalItems = 4,
+                    TotalCost = 28400m,
+                    PaymentStatus = "Partially Returned",
+                    Items = new ObservableCollection<OrderDetailItem>
+                    {
+                        new OrderDetailItem { ProductId = "P2512007", Name = "Intel Core i7-12700K", Category = "Processor", Quantity = 1, ReturnedQuantity = 0, UnitPrice = 18500, Subtotal = 18500 },
+                        new OrderDetailItem { ProductId = "P2512008", Name = "MSI Z690 Gaming Edge", Category = "Motherboard", Quantity = 1, ReturnedQuantity = 1, UnitPrice = 12500, Subtotal = 12500 },
+                        new OrderDetailItem { ProductId = "P2512009", Name = "G.Skill Trident Z 32GB DDR5", Category = "RAM", Quantity = 1, ReturnedQuantity = 0, UnitPrice = 9800, Subtotal = 9800 }
+                    }
                 },
                 new ProductOrderHistoryItem
                 {
-                    OrderNumber = "PO-001",
-                    CustomerName = "Technician",
-                    OrderDate = new DateTime(2025, 6, 9),
-                    TotalItems = 3,
-                    TotalCost = 14.856m,
-                    PaymentStatus = "Paid"
+                    OrderNumber = "PO-004",
+                    CustomerName = "Jane Smith",
+                    OrderDate = new DateTime(2025, 6, 10),
+                    TotalItems = 2,
+                    TotalCost = 15200m,
+                    PaymentStatus = "Paid",
+                    Items = new ObservableCollection<OrderDetailItem>
+                    {
+                        new OrderDetailItem { ProductId = "P2512010", Name = "NVIDIA RTX 3060 Ti", Category = "Graphics Card", Quantity = 1, ReturnedQuantity = 0, UnitPrice = 22500, Subtotal = 22500 }
+                    }
                 },
                 new ProductOrderHistoryItem
                 {
-                    OrderNumber = "PO-001",
-                    CustomerName = "Technician",
-                    OrderDate = new DateTime(2025, 5, 25),
+                    OrderNumber = "PO-005",
+                    CustomerName = "Robert Brown",
+                    OrderDate = new DateTime(2025, 6, 11),
                     TotalItems = 3,
-                    TotalCost = 14.856m,
-                    PaymentStatus = "Paid"
+                    TotalCost = 19200m,
+                    PaymentStatus = "Fully Returned",
+                    Items = new ObservableCollection<OrderDetailItem>
+                    {
+                        new OrderDetailItem { ProductId = "P2512011", Name = "WD Black 2TB HDD", Category = "Storage", Quantity = 2, ReturnedQuantity = 2, UnitPrice = 3800, Subtotal = 7600 },
+                        new OrderDetailItem { ProductId = "P2512012", Name = "Fractal Design Meshify C", Category = "Case", Quantity = 1, ReturnedQuantity = 1, UnitPrice = 4500, Subtotal = 4500 }
+                    }
                 },
                 new ProductOrderHistoryItem
                 {
-                    OrderNumber = "PO-001",
-                    CustomerName = "Technician",
-                    OrderDate = new DateTime(2025, 5, 25),
-                    TotalItems = 3,
-                    TotalCost = 14.856m,
-                    PaymentStatus = "Paid"
+                    OrderNumber = "PO-006",
+                    CustomerName = "Emily Davis",
+                    OrderDate = new DateTime(2025, 6, 12),
+                    TotalItems = 1,
+                    TotalCost = 8950m,
+                    PaymentStatus = "Voided",
+                    Items = new ObservableCollection<OrderDetailItem>
+                    {
+                        new OrderDetailItem { ProductId = "P2512001", Name = "AMD Ryzen 5 5600", Category = "Processor", Quantity = 1, ReturnedQuantity = 0, UnitPrice = 8950, Subtotal = 8950 }
+                    }
                 }
             };
 
@@ -271,14 +303,8 @@ namespace gentech_services.ViewsModels
         {
             if (order == null) return;
 
-            // Load sample order details
-            OrderDetailsItems = new ObservableCollection<OrderDetailItem>
-            {
-                new OrderDetailItem { ProductId = "P001", Name = "AMD Ryzen 5 5600", Category = "Processor", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 8950, Subtotal = 17900 },
-                new OrderDetailItem { ProductId = "P002", Name = "ASUS ROG STRIX B550-F", Category = "Motherboard", Quantity = 1, ReturnedQuantity = 1, UnitPrice = 9500, Subtotal = 9500 },
-                new OrderDetailItem { ProductId = "P003", Name = "Corsair Vengeance 16GB DDR4", Category = "RAM", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 3200, Subtotal = 6400 }
-            };
-
+            currentSelectedOrder = order;
+            OrderDetailsItems = new ObservableCollection<OrderDetailItem>(order.Items);
             OrderDetailsTotal = OrderDetailsItems.Sum(item => item.Subtotal);
             IsOrderDetailsVisible = true;
         }
@@ -292,13 +318,38 @@ namespace gentech_services.ViewsModels
         {
             if (order == null) return;
 
-            // Load sample return items - only show items with available quantity (not fully returned)
-            ReturnItems = new ObservableCollection<ReturnItem>
+            // Prevent returns for voided orders
+            if (order.PaymentStatus == "Voided")
             {
-                new ReturnItem { ProductName = "AMD Ryzen 5 5600", OriginalQuantity = 2, ReturnedQuantity = 0, UnitPrice = 8950, ReturnQuantity = 0 },
-                // ASUS ROG STRIX B550-F is excluded (fully returned: OriginalQuantity=1, ReturnedQuantity=1)
-                new ReturnItem { ProductName = "Corsair Vengeance 16GB DDR4", OriginalQuantity = 2, ReturnedQuantity = 0, UnitPrice = 3200, ReturnQuantity = 0 }
-            };
+                MessageBox.Show("Cannot process returns for voided transactions.", "Invalid Operation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            currentSelectedOrder = order;
+
+            // Only show items with available quantity (not fully returned)
+            ReturnItems = new ObservableCollection<ReturnItem>();
+            foreach (var item in order.Items)
+            {
+                int availableQuantity = item.Quantity - item.ReturnedQuantity;
+                if (availableQuantity > 0)
+                {
+                    ReturnItems.Add(new ReturnItem
+                    {
+                        ProductName = item.Name,
+                        OriginalQuantity = item.Quantity,
+                        ReturnedQuantity = item.ReturnedQuantity,
+                        UnitPrice = item.UnitPrice,
+                        ReturnQuantity = 0
+                    });
+                }
+            }
+
+            if (ReturnItems.Count == 0)
+            {
+                MessageBox.Show("All items in this order have been fully returned.", "No Items Available", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
 
             CalculateTotalRefund();
             IsReturnModalVisible = true;
@@ -349,8 +400,48 @@ namespace gentech_services.ViewsModels
 
             if (result == MessageBoxResult.Yes)
             {
+                // Update the returned quantities for each item
+                foreach (var returnItem in ReturnItems.Where(r => r.ReturnQuantity > 0))
+                {
+                    var orderItem = currentSelectedOrder.Items.FirstOrDefault(i => i.Name == returnItem.ProductName);
+                    if (orderItem != null)
+                    {
+                        orderItem.ReturnedQuantity += returnItem.ReturnQuantity;
+                    }
+                }
+
+                // Update payment status based on returned items
+                UpdateOrderPaymentStatus(currentSelectedOrder);
+
+                // Refresh the filtered orders to show updated status
+                ApplyFilters();
+
                 MessageBox.Show("Return processed successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 CloseReturnModal();
+            }
+        }
+
+        private void UpdateOrderPaymentStatus(ProductOrderHistoryItem order)
+        {
+            if (order == null || order.Items == null || order.Items.Count == 0) return;
+
+            // Check if all items are fully returned
+            bool allFullyReturned = order.Items.All(item => item.ReturnedQuantity >= item.Quantity);
+
+            // Check if any items are partially returned
+            bool anyReturned = order.Items.Any(item => item.ReturnedQuantity > 0);
+
+            if (allFullyReturned)
+            {
+                order.PaymentStatus = "Fully Returned";
+            }
+            else if (anyReturned)
+            {
+                order.PaymentStatus = "Partially Returned";
+            }
+            else
+            {
+                order.PaymentStatus = "Paid";
             }
         }
 
@@ -358,14 +449,22 @@ namespace gentech_services.ViewsModels
         {
             if (order == null) return;
 
-            // Load sample order details
-            OrderDetailsItems = new ObservableCollection<OrderDetailItem>
+            // Prevent voiding already voided orders
+            if (order.PaymentStatus == "Voided")
             {
-                new OrderDetailItem { ProductId = "P001", Name = "AMD Ryzen 5 5600", Category = "Processor", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 8950, Subtotal = 17900 },
-                new OrderDetailItem { ProductId = "P002", Name = "ASUS ROG STRIX B550-F", Category = "Motherboard", Quantity = 1, ReturnedQuantity = 1, UnitPrice = 9500, Subtotal = 9500 },
-                new OrderDetailItem { ProductId = "P003", Name = "Corsair Vengeance 16GB DDR4", Category = "RAM", Quantity = 2, ReturnedQuantity = 0, UnitPrice = 3200, Subtotal = 6400 }
-            };
+                MessageBox.Show("This transaction has already been voided.", "Invalid Operation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
+            // Prevent voiding orders with returns
+            if (order.PaymentStatus == "Partially Returned" || order.PaymentStatus == "Fully Returned")
+            {
+                MessageBox.Show("Cannot void orders that have returns processed. Please use the return function instead.", "Invalid Operation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            currentSelectedOrder = order;
+            OrderDetailsItems = new ObservableCollection<OrderDetailItem>(order.Items);
             OrderDetailsTotal = OrderDetailsItems.Sum(item => item.Subtotal);
             SelectedOrderForVoid = order;
             IsVoidModalVisible = true;
@@ -389,6 +488,12 @@ namespace gentech_services.ViewsModels
 
             if (result == MessageBoxResult.Yes)
             {
+                // Update payment status to Voided
+                SelectedOrderForVoid.PaymentStatus = "Voided";
+
+                // Refresh the filtered orders to show updated status
+                ApplyFilters();
+
                 MessageBox.Show("Transaction voided successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 CloseVoidModal();
             }
@@ -404,6 +509,7 @@ namespace gentech_services.ViewsModels
         private int totalItems;
         private decimal totalCost;
         private string paymentStatus;
+        private ObservableCollection<OrderDetailItem> items;
 
         public string OrderNumber
         {
@@ -462,6 +568,16 @@ namespace gentech_services.ViewsModels
             {
                 paymentStatus = value;
                 OnPropertyChanged(nameof(PaymentStatus));
+            }
+        }
+
+        public ObservableCollection<OrderDetailItem> Items
+        {
+            get { return items; }
+            set
+            {
+                items = value;
+                OnPropertyChanged(nameof(Items));
             }
         }
 

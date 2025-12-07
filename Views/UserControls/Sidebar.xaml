@@ -67,16 +67,18 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0" Width="32px" Height="32px" Margin="0,0,10,0" Background="White" CornerRadius="100" BorderThickness="1" BorderBrush="White">
-                    <Ellipse>
-                        <Ellipse.Fill>
-                            <ImageBrush ImageSource="pack://application:,,,/gentech_services;component/Resources/Assets/Images/profileImage.png"/>
-                        </Ellipse.Fill>
-                    </Ellipse>
+                    <TextBlock x:Name="UserInitialText"
+                               Text="A"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               Foreground="Black"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
                 </Border>
 
                 <StackPanel Grid.Column="1"  Orientation="Vertical">
-                    <TextBlock Text="Nicole Juntilla" Foreground="white" FontSize="16" Margin="0,0,0,2"/>
-                    <TextBlock Text="Technician" Foreground="white" FontSize="10"/>
+                    <TextBlock x:Name="UserNameText" Text="Admin" Foreground="white" FontSize="16" Margin="0,0,0,2"/>
+                    <TextBlock x:Name="UserRoleText" Text="Admin" Foreground="white" FontSize="10"/>
                 </StackPanel>
             </Grid>
         </Border>

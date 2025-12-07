@@ -11,7 +11,7 @@
         Title="MainWindow" Height="1050" Width="1200" WindowState="Maximized">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300"/>
+            <ColumnDefinition x:Name="SidebarColumn" Width="300"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <control:Sidebar x:Name="MainSidebar" NavigationRequested="Sidebar_NavigationRequested"/>

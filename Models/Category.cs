@@ -1,18 +1,23 @@
-﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace gentech_services.Models
 {
     public class Category
     {
+        [Key]
         public int CategoryID { get; set; }
-        public string Name { get; set; }
-        public string Type { get; set; }
 
-        //public ICollection<Product> Products { get; set; }
-        //public ICollection<Service> Services { get; set; }
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(10)]
+        public string Type { get; set; } = string.Empty; // "Product" or "Service"
+
+        // Navigation properties
+        public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+        public virtual ICollection<Service> Services { get; set; } = new List<Service>();
     }
 }

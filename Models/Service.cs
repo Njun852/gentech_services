@@ -1,29 +1,40 @@
-﻿using gentech_services.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ProductServicesManagementSystem.Models
+namespace gentech_services.Models
 {
     public class Service
     {
+        [Key]
         public int ServiceID { get; set; }
-        public string Name { get; set; }
 
-        public string Description { get; set; }
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
 
+        public string? Description { get; set; }
+
+        [Required]
+        [Column(TypeName = "decimal(10,2)")]
         public decimal Price { get; set; }
 
-        //TODO: figure out what to do with this
+        [Required]
         public int CategoryID { get; set; }
 
-        public bool IsActive { get; set; }
+        [Required]
+        public bool IsActive { get; set; } = true;
 
-        public DateTime CreatedAt { get; set; }
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
         public DateTime? UpdatedAt { get; set; }
 
-        public Category Category { get; set; }
-        //public ICollection<Appointment> Appointments { get; set; }
+        // Navigation properties
+        [ForeignKey("CategoryID")]
+        public virtual Category? Category { get; set; }
+
+        public virtual ICollection<ServiceOrderItem> ServiceOrderItems { get; set; } = new List<ServiceOrderItem>();
     }
 }

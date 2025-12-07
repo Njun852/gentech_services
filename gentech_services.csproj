@@ -31,6 +31,7 @@
     <None Remove="Resources\Assets\Icons\warn_orange.png" />
     <None Remove="Resources\Assets\Icons\warn_red.png" />
     <None Remove="Resources\Assets\Icons\wrench.png" />
+    <None Remove="Resources\Assets\Images\brand.png" />
     <None Remove="Resources\Assets\Images\profileImage.png" />
   </ItemGroup>
 
@@ -66,9 +67,22 @@
     <Resource Include="Resources\Assets\Icons\warn_orange.png" />
     <Resource Include="Resources\Assets\Icons\warn_red.png" />
     <Resource Include="Resources\Assets\Icons\wrench.png" />
+    <Resource Include="Resources\Assets\Images\brand.png" />
     <Resource Include="Resources\Assets\Images\profileImage.png">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

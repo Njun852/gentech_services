@@ -1,28 +1,43 @@
-﻿using gentech_services.Models;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ProductServicesManagementSystem.Models
+namespace gentech_services.Models
 {
     public class InventoryLog
     {
-        public int LogID { get; set; }
+        [Key]
+        public int InventoryLogID { get; set; }
 
+        [Required]
         public int ProductID { get; set; }
 
-        public int ChangeAmount { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string ChangeType { get; set; } = string.Empty; // "Stock In", "Stock Out", "Adjustment", "Sale", "Return"
 
-        public int UpdatedQuantity { get; set; }
+        [Required]
+        public int QuantityChanged { get; set; }
 
-        public string Reason { get; set; }
+        [Required]
+        public int PreviousQuantity { get; set; }
 
-        public int RecordedByID { get; set; }
+        [Required]
+        public int NewQuantity { get; set; }
 
-        public DateTime Timestamp { get; set; }
+        public string? Reason { get; set; }
 
-        // Navigation
-        public Product Product { get; set; }
-        public User RecordedBy { get; set; }
+        [Required]
+        public int CreatedBy { get; set; } // UserID
+
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // Navigation properties
+        [ForeignKey("ProductID")]
+        public virtual Product? Product { get; set; }
+
+        [ForeignKey("CreatedBy")]
+        public virtual User? User { get; set; }
     }
 }

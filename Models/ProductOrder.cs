@@ -1,37 +1,39 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace gentech_services.Models
 {
-    class ProductOrder : INotifyPropertyChanged
+    public class ProductOrder
     {
-        public Customer Customer { get; set; }
-        public int SaleID { get; set; }
-        public int CustomerID { get; set; }
+        [Key]
+        public int ProductOrderID { get; set; }
 
+        [Required]
+        [MaxLength(200)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(255)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(20)]
+        public string Phone { get; set; } = string.Empty;
+
+        [Required]
+        [Column(TypeName = "decimal(10,2)")]
         public decimal TotalAmount { get; set; }
 
-        public string PaymentMethod { get; set; }
+        [Required]
+        [MaxLength(20)]
+        public string Status { get; set; } = "Pending"; // "Pending", "Completed", "Voided", "Returned"
 
-        public string Status { get; set; }
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        public DateTime CreatedAt { get; set; }
-        public User Staff { get; set; }
-
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-
-
+        // Navigation properties
+        public virtual ICollection<ProductOrderItem> ProductOrderItems { get; set; } = new List<ProductOrderItem>();
     }
 }
