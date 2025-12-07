@@ -73,9 +73,7 @@ namespace gentech_services.ViewsModels
             set
             {
                 customerName = value;
-                OnPropertyChanged(nameof(CustomerName));
-                ValidateName();
-                ProcessPaymentCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged();
             }
         }
 
@@ -85,9 +83,7 @@ namespace gentech_services.ViewsModels
             set
             {
                 customerEmail = value;
-                OnPropertyChanged(nameof(CustomerEmail));
-                ValidateEmail();
-                ProcessPaymentCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged();
             }
         }
 
@@ -97,11 +93,45 @@ namespace gentech_services.ViewsModels
             set
             {
                 customerPhone = value;
-                OnPropertyChanged(nameof(CustomerPhone));
-                ValidatePhone();
-                ProcessPaymentCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged();
             }
         }
+
+        //public string CustomerName
+        //{
+        //    get { return customerName; }
+        //    set
+        //    {
+        //        customerName = value;
+        //        OnPropertyChanged(nameof(CustomerName));
+        //        ValidateName();
+        //        ProcessPaymentCommand.RaiseCanExecuteChanged();
+        //    }
+        //}
+
+        //public string CustomerEmail
+        //{
+        //    get { return customerEmail; }
+        //    set
+        //    {
+        //        customerEmail = value;
+        //        OnPropertyChanged(nameof(CustomerEmail));
+        //        ValidateEmail();
+        //        ProcessPaymentCommand.RaiseCanExecuteChanged();
+        //    }
+        //}
+
+        //public string CustomerPhone
+        //{
+        //    get { return customerPhone; }
+        //    set
+        //    {
+        //        customerPhone = value;
+        //        OnPropertyChanged(nameof(CustomerPhone));
+        //        ValidatePhone();
+        //        ProcessPaymentCommand.RaiseCanExecuteChanged();
+        //    }
+        //}
 
         public string NameError
         {
@@ -428,10 +458,7 @@ namespace gentech_services.ViewsModels
             return cartItems.Count > 0 &&
                    !string.IsNullOrWhiteSpace(customerName) &&
                    !string.IsNullOrWhiteSpace(customerEmail) &&
-                   !string.IsNullOrWhiteSpace(customerPhone) &&
-                   string.IsNullOrEmpty(nameError) &&
-                   string.IsNullOrEmpty(emailError) &&
-                   string.IsNullOrEmpty(phoneError);
+                   !string.IsNullOrWhiteSpace(customerPhone);
         }
 
         private void ValidateName()
@@ -443,6 +470,11 @@ namespace gentech_services.ViewsModels
             else if (customerName.Length < 2)
             {
                 NameError = "Name must be at least 2 characters";
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerName,
+                @"^[A-Za-z]"))
+            {
+                EmailError = "Name should be all letters";
             }
             else
             {
@@ -478,18 +510,87 @@ namespace gentech_services.ViewsModels
             {
                 PhoneError = "Invalid phone number format";
             }
-            else if (customerPhone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "").Replace("+", "").Length < 10)
-            {
-                PhoneError = "Phone number must be at least 10 digits";
-            }
+            //else if (customerPhone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "").Replace("+", "").Length < 10)
+            //{
+            //    PhoneError = "Phone number must be at least 10 digits";
+            //}
             else
             {
                 PhoneError = string.Empty;
             }
         }
 
+        private bool ValidateForm()
+        {
+            bool isValid = true;
+
+            NameError = string.Empty;
+            EmailError = string.Empty;
+            PhoneError = string.Empty;
+
+
+            if (string.IsNullOrWhiteSpace(customerName))
+            {
+                NameError = "Name is required";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerName,
+                @"^[A-Za-z]+(\s[A-Za-z]+)*$"))
+            {
+                NameError = "Name should be all letters";
+                isValid = false;
+            }
+            else
+            {
+                NameError = string.Empty;
+                
+            }
+
+            if (string.IsNullOrWhiteSpace(customerEmail))
+            {
+                EmailError = "Email is required";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerEmail,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                EmailError = "Invalid email format";
+                isValid = false;
+            }
+            else
+            {
+                EmailError = string.Empty;
+
+            }
+
+
+            if (string.IsNullOrWhiteSpace(CustomerPhone))
+            {
+                PhoneError = "Phone number is required";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerPhone,
+                 @"^(?:\+63|63|0)?(?:9\d{9}|(?:2|[3-8]\d)\d{7}|\d{7,8})$"))
+            {
+                PhoneError = "Invalid phone number format";
+                isValid = false;
+            }
+            else
+            {
+                PhoneError = string.Empty;
+
+            }
+
+            return isValid;
+        }
+ 
+
         private void ProcessPayment()
         {
+            if (!ValidateForm())
+            {
+                return;
+            }
             decimal total = cartItems.Sum(item => item.Subtotal);
             int itemCount = cartItems.Sum(item => item.Quantity);
 

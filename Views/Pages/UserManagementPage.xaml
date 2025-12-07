@@ -225,7 +225,7 @@
                     <TextBlock Text="PIN (4-6 digits)" FontSize="12" FontWeight="Medium" Margin="0,0,0,6" Foreground="#333"/>
                     <TextBox x:Name="PINTextBox"
                                  Style="{StaticResource OutlineTextBox}"
-                                 Tag="300"
+                                 Tag="0000"
                                  Height="36"
                                  FontSize="13"
                                  VerticalContentAlignment="Center"
