@@ -177,7 +177,7 @@ namespace gentech_services.Views.UserControls
             SelectedTechnician = currentOrder.Technician;
 
             // Disable technician selection if already assigned
-            if (currentOrder.Technician != null)
+            if (currentOrder.TechnicianID != null || currentOrder.Technician != null)
             {
                 TechnicianComboBox.IsEnabled = false;
             }
@@ -207,9 +207,9 @@ namespace gentech_services.Views.UserControls
                 if (serviceItem.Status == "Pending")
                 {
                     // Validate that a technician is assigned before allowing status change to Ongoing
-                    if (currentOrder.Technician == null)
+                    if (currentOrder.TechnicianID == null && currentOrder.Technician == null && SelectedTechnician == null)
                     {
-                        MessageBox.Show("Cannot set status to Ongoing without assigning a technician first.",
+                        MessageBox.Show("Cannot set status to Ongoing without assigning a technician first.\n\nPlease select a technician from the dropdown above.",
                             "Technician Required",
                             MessageBoxButton.OK,
                             MessageBoxImage.Warning);
@@ -282,32 +282,32 @@ namespace gentech_services.Views.UserControls
             }
         }
 
+        //private void TechnicianComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    // If the ComboBox is disabled, the selection shouldn't change, 
+        //    // but the initial setting of SelectedTechnician fires this event.
+
+        //    // Only auto-save if we have a current order and a new technician was selected (or cleared)
+        //    if (currentOrder != null && e.AddedItems.Count > 0 && e.AddedItems[0] is User)
+        //    {
+        //        // This will call AutoSaveChanges(), which will lock the ComboBox if successful
+        //        AutoSaveChanges();
+        //    }
+        //    else if (currentOrder != null && e.RemovedItems.Count > 0 && SelectedTechnician == null)
+        //    {
+        //        // Handle case where selection is intentionally cleared (if allowed)
+        //        AutoSaveChanges();
+        //    }
+        //}
+
         private void TechnicianComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Prevent changing technician if already assigned
-            if (currentOrder != null && currentOrder.Technician != null && e.AddedItems.Count > 0)
-            {
-                var newTechnician = e.AddedItems[0] as User;
-                if (newTechnician != null && newTechnician.UserID != currentOrder.Technician.UserID)
-                {
-                    MessageBox.Show("Cannot change technician once assigned.",
-                        "Technician Already Assigned",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-
-                    // Revert to original technician
-                    SelectedTechnician = currentOrder.Technician;
-                    return;
-                }
-            }
-
             // Only auto-save if we have a current order (not during initial load)
             if (currentOrder != null && SelectedTechnician != null)
             {
                 AutoSaveChanges();
             }
         }
-   
         private void AutoSaveChanges()
         {
             if (currentOrder == null) return;
@@ -316,11 +316,64 @@ namespace gentech_services.Views.UserControls
             if (SelectedTechnician != null && SelectedTechnician.Username != "filter")
             {
                 currentOrder.Technician = SelectedTechnician;
+                currentOrder.TechnicianID = SelectedTechnician.UserID;
+
+                // Lock the ComboBox after successful assignment
+                TechnicianComboBox.IsEnabled = false;
             }
 
             // Notify parent to save changes to database
             OnSaveChanges?.Invoke(currentOrder);
         }
+        //private void AutoSaveChanges()
+        //{
+        //    if (currentOrder == null) return;
+
+        //    // 1. Update technician if selected
+        //    if (SelectedTechnician != null && SelectedTechnician.Username != "filter")
+        //    {
+        //        MessageBox.Show("Selected");
+        //        // ASSIGNMENT HAPPENS HERE
+        //        currentOrder.Technician = SelectedTechnician;
+
+        //        // Disable the ComboBox immediately after successful assignment
+        //        if (currentOrder.Technician != null)
+        //        {
+        //            TechnicianComboBox.IsEnabled = false; // ⭐ NEW: Lock selection after assignment
+        //        }
+
+        //        // Update technician for all service items for UI refresh
+        //        foreach (var orderServiceItem in orderServices)
+        //        {
+        //            orderServiceItem.Technician = SelectedTechnician;
+        //        }
+        //    }
+        //    // else if the selection was cleared (e.g., set to "filter"), we allow saving null
+        //    else
+        //    {
+        //        currentOrder.Technician = null;
+        //        TechnicianComboBox.IsEnabled = true;
+        //    }
+
+
+        //    // 2. Notify parent to save changes to database
+        //    OnSaveChanges?.Invoke(currentOrder);
+        //}
+
+
+        //private void AutoSaveChanges()
+        //{
+        //    if (currentOrder == null) return;
+
+        //    // Update technician if selected
+        //    if (SelectedTechnician != null && SelectedTechnician.Username != "filter")
+        //    {
+        //        currentOrder.Technician = SelectedTechnician;
+        //    }
+
+        //    // Notify parent to save changes to database
+        //    OnSaveChanges?.Invoke(currentOrder);
+        //}
         //private void AutoSaveChanges()
         //{
         //    if (currentOrder == null) return;

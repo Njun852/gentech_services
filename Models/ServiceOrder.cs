@@ -36,6 +36,12 @@ namespace gentech_services.Models
 
         public string? IssueNotes { get; set; } // Issue / Notes
 
+        // ? NEW: Technician foreign key and navigation property
+        public int? TechnicianID { get; set; }
+
+        [ForeignKey("TechnicianID")]
+        public virtual User? Technician { get; set; }
+
         // Navigation properties
         public virtual ICollection<ServiceOrderItem> ServiceOrderItems { get; set; } = new List<ServiceOrderItem>();
 
@@ -56,9 +62,6 @@ namespace gentech_services.Models
 
         [NotMapped]
         public int SaleID { get; set; } // Legacy property, not in new schema
-
-        [NotMapped]
-        public User? Technician { get; set; } // Legacy property
 
         [NotMapped]
         public Service? Service { get; set; } // Legacy property - now uses ServiceOrderItems

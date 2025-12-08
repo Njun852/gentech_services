@@ -116,6 +116,12 @@ namespace gentech_services.Data
                 .Property(soi => soi.UnitPrice)
                 .HasPrecision(10, 2);
 
+            modelBuilder.Entity<ServiceOrder>()
+          .HasOne(so => so.Technician)
+          .WithMany()  // A technician can have many service orders
+          .HasForeignKey(so => so.TechnicianID)
+          .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<ServiceOrderItem>()
                 .Property(soi => soi.TotalPrice)
                 .HasPrecision(10, 2);

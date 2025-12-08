@@ -101,9 +101,17 @@ namespace gentech_services.ViewsModels
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName = null)
+        public void OnPropertyChanged(string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        // Public method to refresh all calculated properties
+        public void RefreshCalculatedProperties()
+        {
+            OnPropertyChanged(nameof(Status));
+            OnPropertyChanged(nameof(TotalPrice));
+            OnPropertyChanged(nameof(ServicesDisplay));
         }
     }
 
@@ -531,9 +539,34 @@ namespace gentech_services.ViewsModels
                     // Update properties
                     existingOrder.Status = updatedOrder.Status;
                     existingOrder.Technician = updatedOrder.Technician;
+                    existingOrder.TechnicianID = updatedOrder.TechnicianID;
+
+                    // Update service order items statuses
+                    if (updatedOrder.ServiceOrderItems != null && existingOrder.ServiceOrderItems != null)
+                    {
+                        foreach (var updatedItem in updatedOrder.ServiceOrderItems)
+                        {
+                            var existingItem = existingOrder.ServiceOrderItems
+                                .FirstOrDefault(i => i.ServiceOrderItemID == updatedItem.ServiceOrderItemID);
+                            if (existingItem != null)
+                            {
+                                existingItem.Status = updatedItem.Status;
+                            }
+                        }
+                    }
+
+                    // Find and notify the corresponding GroupedServiceOrder
+                    var groupedOrder = groupedServiceOrders.FirstOrDefault(g => g.ServiceOrderID == updatedOrder.ServiceOrderID);
+                    if (groupedOrder != null)
+                    {
+                        // Trigger property changed notifications for calculated properties
+                        groupedOrder.OnPropertyChanged(nameof(GroupedServiceOrder.Status));
+                        groupedOrder.OnPropertyChanged(nameof(GroupedServiceOrder.TotalPrice));
+                        groupedOrder.OnPropertyChanged(nameof(GroupedServiceOrder.ServicesDisplay));
+                    }
                 }
 
-                // 3. Refresh the display
+                // 3. Refresh the display (this rebuilds the entire collection, but the above notifications help with immediate updates)
                 RefreshGroupedOrders();
             }
             catch (Exception ex)
@@ -869,6 +902,7 @@ namespace gentech_services.ViewsModels
                 @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             {
                 EmailError = "Invalid email format";
+                isValid = false;
             }
             
 

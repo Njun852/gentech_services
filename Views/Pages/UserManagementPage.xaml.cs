@@ -367,7 +367,7 @@ namespace gentech_services.Views.Pages
             // Populate edit form
             EditFullNameTextBox.Text = selectedUser.Name;
             EditUsernameTextBox.Text = selectedUser.Username;
-            EditPINTextBox.Text = selectedUser.PIN;
+            EditPINTextBox.Text = "";
 
             // Set role combo box
             for (int i = 0; i < EditRoleComboBox.Items.Count; i++)

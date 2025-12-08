@@ -182,8 +182,15 @@ namespace gentech_services.Views.UserControls
 
             CostText.Text = $"₱ {totalCost:N0}";
 
-            // Technician - not yet implemented in new schema
-            TechnicianText.Text = "Unassigned";
+            // Technician
+            if (order.Technician != null)
+            {
+                TechnicianText.Text = order.Technician.FullName ?? "Unassigned";
+            }
+            else
+            {
+                TechnicianText.Text = "Unassigned";
+            }
 
             // Description
             DescriptionText.Text = order.IssueNotes ?? "No description available";

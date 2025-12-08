@@ -41,7 +41,10 @@ namespace gentech_services.Services
             existingOrder.Status = serviceOrder.Status;
             existingOrder.DeviceDescription = serviceOrder.DeviceDescription;
             existingOrder.IssueNotes = serviceOrder.IssueNotes;
-            existingOrder.Technician = serviceOrder.Technician; // Assuming ServiceOrder has a Technician property
+
+            // Update TechnicianID - the Technician navigation property will be loaded automatically
+            existingOrder.TechnicianID = serviceOrder.TechnicianID ?? serviceOrder.Technician?.UserID;
+
 
             // Update ServiceOrderItems statuses if they exist
             if (serviceOrder.ServiceOrderItems != null && existingOrder.ServiceOrderItems != null)
