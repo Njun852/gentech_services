@@ -40,6 +40,12 @@ namespace gentech_services.Views.Pages
             _productService = new ProductService(productRepository, inventoryLogService);
 
             LoadProductCategories();
+
+            // Subscribe to product collection changes to refresh category counts
+            if (ViewModel != null && ViewModel.Products != null)
+            {
+                ViewModel.Products.CollectionChanged += (s, e) => LoadProductCategories();
+            }
         }
 
         private void ProductActionButton_Click(object sender, RoutedEventArgs e)
@@ -103,13 +109,16 @@ namespace gentech_services.Views.Pages
             e.Handled = true;
         }
 
-        private void DeleteProduct_Click(object sender, RoutedEventArgs e)
+        private async void DeleteProduct_Click(object sender, RoutedEventArgs e)
         {
             ProductActionPopup.IsOpen = false;
             var product = ProductActionPopup.Tag as ProductViewModel;
             if (product != null)
             {
                 ViewModel.DeleteProductCommand.Execute(product);
+                // Refresh category counts after deletion
+                await Task.Delay(500); // Small delay to ensure delete completes
+                LoadProductCategories();
             }
         }
 
