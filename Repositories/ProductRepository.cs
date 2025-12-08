@@ -46,7 +46,8 @@ namespace gentech_services.Repositories
 
         public async Task<bool> SKUExistsAsync(string sku)
         {
-            return await _dbSet.AnyAsync(p => p.SKU == sku);
+            // Only check for active products to allow SKU reuse after deletion
+            return await _dbSet.AnyAsync(p => p.SKU == sku && p.IsActive);
         }
 
         public override async Task<IEnumerable<Product>> GetAllAsync()

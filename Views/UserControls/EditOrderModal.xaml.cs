@@ -159,7 +159,7 @@ namespace gentech_services.Views.UserControls
                         orderServices.Add(new OrderServiceItem
                         {
                             Service = item.Service,
-                            Status = currentOrder.Status,
+                            Status = item.Status ?? "Pending", // Use individual item status, not order status
                             Technician = currentOrder.Technician,
                             ServiceOrder = currentOrder // Reference to parent order
                         });

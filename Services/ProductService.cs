@@ -54,10 +54,10 @@ namespace gentech_services.Services
             int categoryId,
             int createdBy)
         {
-            // Validate SKU uniqueness
+            // Validate SKU uniqueness (only among active products)
             if (await _productRepository.SKUExistsAsync(sku))
             {
-                throw new InvalidOperationException($"Product with SKU '{sku}' already exists.");
+                throw new InvalidOperationException($"An active product with SKU '{sku}' already exists.");
             }
 
             var product = new Product
@@ -107,10 +107,10 @@ namespace gentech_services.Services
                 throw new InvalidOperationException($"Product with ID {productId} not found.");
             }
 
-            // Check SKU uniqueness if changed
+            // Check SKU uniqueness if changed (only among active products)
             if (product.SKU != sku && await _productRepository.SKUExistsAsync(sku))
             {
-                throw new InvalidOperationException($"Product with SKU '{sku}' already exists.");
+                throw new InvalidOperationException($"An active product with SKU '{sku}' already exists.");
             }
 
             product.Name = name;

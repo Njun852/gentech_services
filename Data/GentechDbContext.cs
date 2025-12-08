@@ -87,9 +87,10 @@ namespace gentech_services.Data
                 .HasIndex(u => u.Username)
                 .IsUnique();
 
+            // SKU index (non-unique to allow reuse after soft delete)
+            // Uniqueness is enforced at application level for active products only
             modelBuilder.Entity<Product>()
-                .HasIndex(p => p.SKU)
-                .IsUnique();
+                .HasIndex(p => p.SKU);
 
             // Decimal precision configuration
             modelBuilder.Entity<Product>()
