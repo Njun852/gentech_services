@@ -1,4 +1,5 @@
 using gentech_services.Models;
+using gentech_services.Services;
 using ProductServicesManagementSystem.Models;
 using System;
 using System.Collections.ObjectModel;
@@ -16,6 +17,7 @@ namespace gentech_services.Views.UserControls
         private ObservableCollection<Service> availableServices;
         private ObservableCollection<User> availableTechnicians;
         private User selectedTechnician;
+        private ServiceOrderService _serviceOrderService;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -32,7 +34,7 @@ namespace gentech_services.Views.UserControls
         }
 
         public Action<ServiceOrder> OnSaveChanges { get; set; }
-        public Action<ServiceOrder> OnServiceAdded { get; set; }
+        public Action OnServiceItemAdded { get; set; }
 
         public EditOrderModal()
         {
@@ -44,10 +46,15 @@ namespace gentech_services.Views.UserControls
             TechnicianComboBox.SelectionChanged += TechnicianComboBox_SelectionChanged;
 
             // Wire up select service modal callback
-            SelectServiceModalControl.OnServiceSelected = (selectedService) =>
+            SelectServiceModalControl.OnServiceSelected = async (selectedService) =>
             {
-                AddServiceToOrder(selectedService);
+                await AddServiceToOrder(selectedService);
             };
+        }
+
+        public void SetServiceOrderService(ServiceOrderService serviceOrderService)
+        {
+            _serviceOrderService = serviceOrderService;
         }
 
         protected void OnPropertyChanged(string propertyName)
@@ -152,7 +159,7 @@ namespace gentech_services.Views.UserControls
                         orderServices.Add(new OrderServiceItem
                         {
                             Service = item.Service,
-                            Status = currentOrder.Status,
+                            Status = item.Status ?? "Pending", // Use individual item status, not order status
                             Technician = currentOrder.Technician,
                             ServiceOrder = currentOrder // Reference to parent order
                         });
@@ -168,6 +175,16 @@ namespace gentech_services.Views.UserControls
 
             // Set selected technician
             SelectedTechnician = currentOrder.Technician;
+
+            // Disable technician selection if already assigned
+            if (currentOrder.TechnicianID != null || currentOrder.Technician != null)
+            {
+                TechnicianComboBox.IsEnabled = false;
+            }
+            else
+            {
+                TechnicianComboBox.IsEnabled = true;
+            }
 
             // Show the modal
             ModalOverlay.Visibility = Visibility.Visible;
@@ -189,6 +206,16 @@ namespace gentech_services.Views.UserControls
                 // Determine new status and confirmation message
                 if (serviceItem.Status == "Pending")
                 {
+                    // Validate that a technician is assigned before allowing status change to Ongoing
+                    if (currentOrder.TechnicianID == null && currentOrder.Technician == null && SelectedTechnician == null)
+                    {
+                        MessageBox.Show("Cannot set status to Ongoing without assigning a technician first.\n\nPlease select a technician from the dropdown above.",
+                            "Technician Required",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        return;
+                    }
+
                     newStatus = "Ongoing";
                     confirmMessage = "Are you sure you want to set this service to Ongoing?";
                 }
@@ -255,6 +282,24 @@ namespace gentech_services.Views.UserControls
             }
         }
 
+        //private void TechnicianComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        //{
+        //    // If the ComboBox is disabled, the selection shouldn't change, 
+        //    // but the initial setting of SelectedTechnician fires this event.
+
+        //    // Only auto-save if we have a current order and a new technician was selected (or cleared)
+        //    if (currentOrder != null && e.AddedItems.Count > 0 && e.AddedItems[0] is User)
+        //    {
+        //        // This will call AutoSaveChanges(), which will lock the ComboBox if successful
+        //        AutoSaveChanges();
+        //    }
+        //    else if (currentOrder != null && e.RemovedItems.Count > 0 && SelectedTechnician == null)
+        //    {
+        //        // Handle case where selection is intentionally cleared (if allowed)
+        //        AutoSaveChanges();
+        //    }
+        //}
+
         private void TechnicianComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             // Only auto-save if we have a current order (not during initial load)
@@ -263,7 +308,6 @@ namespace gentech_services.Views.UserControls
                 AutoSaveChanges();
             }
         }
-   
         private void AutoSaveChanges()
         {
             if (currentOrder == null) return;
@@ -272,11 +316,64 @@ namespace gentech_services.Views.UserControls
             if (SelectedTechnician != null && SelectedTechnician.Username != "filter")
             {
                 currentOrder.Technician = SelectedTechnician;
+                currentOrder.TechnicianID = SelectedTechnician.UserID;
+
+                // Lock the ComboBox after successful assignment
+                TechnicianComboBox.IsEnabled = false;
             }
 
             // Notify parent to save changes to database
             OnSaveChanges?.Invoke(currentOrder);
         }
+        //private void AutoSaveChanges()
+        //{
+        //    if (currentOrder == null) return;
+
+        //    // 1. Update technician if selected
+        //    if (SelectedTechnician != null && SelectedTechnician.Username != "filter")
+        //    {
+        //        MessageBox.Show("Selected");
+        //        // ASSIGNMENT HAPPENS HERE
+        //        currentOrder.Technician = SelectedTechnician;
+
+        //        // Disable the ComboBox immediately after successful assignment
+        //        if (currentOrder.Technician != null)
+        //        {
+        //            TechnicianComboBox.IsEnabled = false; // ⭐ NEW: Lock selection after assignment
+        //        }
+
+        //        // Update technician for all service items for UI refresh
+        //        foreach (var orderServiceItem in orderServices)
+        //        {
+        //            orderServiceItem.Technician = SelectedTechnician;
+        //        }
+        //    }
+        //    // else if the selection was cleared (e.g., set to "filter"), we allow saving null
+        //    else
+        //    {
+        //        currentOrder.Technician = null;
+        //        TechnicianComboBox.IsEnabled = true;
+        //    }
+
+
+        //    // 2. Notify parent to save changes to database
+        //    OnSaveChanges?.Invoke(currentOrder);
+        //}
+
+
+        //private void AutoSaveChanges()
+        //{
+        //    if (currentOrder == null) return;
+
+        //    // Update technician if selected
+        //    if (SelectedTechnician != null && SelectedTechnician.Username != "filter")
+        //    {
+        //        currentOrder.Technician = SelectedTechnician;
+        //    }
+
+        //    // Notify parent to save changes to database
+        //    OnSaveChanges?.Invoke(currentOrder);
+        //}
         //private void AutoSaveChanges()
         //{
         //    if (currentOrder == null) return;
@@ -354,39 +451,46 @@ namespace gentech_services.Views.UserControls
             SelectServiceModalControl.ShowModal(unselectedServices);
         }
 
-        private void AddServiceToOrder(Service selectedService)
+        private async System.Threading.Tasks.Task AddServiceToOrder(Service selectedService)
         {
             if (selectedService == null || currentOrder == null) return;
 
-            // Create a new ServiceOrder for this service
-            var newServiceOrder = new ServiceOrder
+            if (_serviceOrderService == null)
             {
-                SaleID = currentOrder.SaleID,
-                Service = selectedService,
-                Technician = SelectedTechnician ?? currentOrder.Technician,
-                Status = "Pending",
-                AppointmentDate = currentOrder.AppointmentDate,
-                Customer = currentOrder.Customer,
-                PaymentMethod = currentOrder.PaymentMethod,
-                IssueDescription = currentOrder.IssueDescription // Same issue description for all services in the appointment
-            };
+                MessageBox.Show("Service order service not initialized.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
-            // Add to the UI list
-            orderServices.Add(new OrderServiceItem
+            try
             {
-                Service = selectedService,
-                Status = "Pending",
-                Technician = SelectedTechnician ?? currentOrder.Technician,
-                ServiceOrder = newServiceOrder
-            });
+                // Add the service item to the existing order in the database
+                var newItem = await _serviceOrderService.AddServiceItemToOrderAsync(
+                    currentOrder.ServiceOrderID,
+                    selectedService.ServiceID,
+                    quantity: 1
+                );
 
-            // Update total cost
-            UpdateTotalCost();
+                // Add to the UI list
+                orderServices.Add(new OrderServiceItem
+                {
+                    Service = selectedService,
+                    Status = "Pending",
+                    Technician = SelectedTechnician ?? currentOrder.Technician,
+                    ServiceOrder = currentOrder
+                });
 
-            // Notify parent to add to actual data collections
-            OnServiceAdded?.Invoke(newServiceOrder);
+                // Update total cost
+                UpdateTotalCost();
 
-            MessageBox.Show($"Service '{selectedService.Name}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Notify parent to refresh the display
+                OnServiceItemAdded?.Invoke();
+
+                MessageBox.Show($"Service '{selectedService.Name}' added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to add service: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)

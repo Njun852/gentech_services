@@ -28,7 +28,7 @@ namespace gentech_services.Models
 
         [Required]
         [MaxLength(20)]
-        public string Status { get; set; } = "Pending"; // "Pending", "Completed", "Voided", "Returned"
+        public string Status { get; set; } = "Paid"; // "Paid", "Partially Returned", "Fully Returned", "Voided"
 
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.Now;

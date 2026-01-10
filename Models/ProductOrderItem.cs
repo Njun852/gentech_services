@@ -18,6 +18,8 @@ namespace gentech_services.Models
         [Required]
         public int Quantity { get; set; }
 
+        public int ReturnedQuantity { get; set; } = 0;
+
         [Required]
         [Column(TypeName = "decimal(10,2)")]
         public decimal UnitPrice { get; set; }

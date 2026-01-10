@@ -52,6 +52,9 @@ namespace gentech_services.Services
                 // Ensure database is created
                 await context.Database.EnsureCreatedAsync();
 
+                // Apply schema migrations if needed
+                await ApplySchemaMigrations(context);
+
                 var userRepository = new UserRepository(context);
                 _userService = new UserService(userRepository);
 
@@ -292,6 +295,49 @@ namespace gentech_services.Services
             catch (Exception ex)
             {
                 Console.WriteLine($"Error seeding service categories and services: {ex.Message}");
+            }
+        }
+
+        private async Task ApplySchemaMigrations(GentechDbContext context)
+        {
+            try
+            {
+                // Check if ReturnedQuantity column exists in ProductOrderItems table
+                var connection = context.Database.GetDbConnection();
+                await connection.OpenAsync();
+
+                using var command = connection.CreateCommand();
+                command.CommandText = "PRAGMA table_info(ProductOrderItems)";
+
+                bool hasReturnedQuantity = false;
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var columnName = reader.GetString(1); // Column name is at index 1
+                        if (columnName == "ReturnedQuantity")
+                        {
+                            hasReturnedQuantity = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Add ReturnedQuantity column if it doesn't exist
+                if (!hasReturnedQuantity)
+                {
+                    Console.WriteLine("Adding ReturnedQuantity column to ProductOrderItems table...");
+                    using var alterCommand = connection.CreateCommand();
+                    alterCommand.CommandText = "ALTER TABLE ProductOrderItems ADD COLUMN ReturnedQuantity INTEGER NOT NULL DEFAULT 0";
+                    await alterCommand.ExecuteNonQueryAsync();
+                    Console.WriteLine("ReturnedQuantity column added successfully.");
+                }
+
+                await connection.CloseAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error applying schema migrations: {ex.Message}");
             }
         }
     }

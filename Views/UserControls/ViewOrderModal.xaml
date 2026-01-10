@@ -24,13 +24,19 @@
     </UserControl.Resources>
 
     <!-- Modal Overlay -->
-    <Grid x:Name="ModalOverlay" Background="#80000000" Visibility="Collapsed">
+    <Grid x:Name="ModalOverlay"
+          Background="#80000000"
+          Visibility="Collapsed"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
         <Border Background="White"
                 CornerRadius="8"
                 MaxWidth="550"
                 MaxHeight="500"
                 Margin="40"
-                Padding="24">
+                Padding="24"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>

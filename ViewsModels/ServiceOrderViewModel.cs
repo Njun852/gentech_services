@@ -101,9 +101,17 @@ namespace gentech_services.ViewsModels
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
-        protected void OnPropertyChanged(string propertyName = null)
+        public void OnPropertyChanged(string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        // Public method to refresh all calculated properties
+        public void RefreshCalculatedProperties()
+        {
+            OnPropertyChanged(nameof(Status));
+            OnPropertyChanged(nameof(TotalPrice));
+            OnPropertyChanged(nameof(ServicesDisplay));
         }
     }
 
@@ -531,9 +539,34 @@ namespace gentech_services.ViewsModels
                     // Update properties
                     existingOrder.Status = updatedOrder.Status;
                     existingOrder.Technician = updatedOrder.Technician;
+                    existingOrder.TechnicianID = updatedOrder.TechnicianID;
+
+                    // Update service order items statuses
+                    if (updatedOrder.ServiceOrderItems != null && existingOrder.ServiceOrderItems != null)
+                    {
+                        foreach (var updatedItem in updatedOrder.ServiceOrderItems)
+                        {
+                            var existingItem = existingOrder.ServiceOrderItems
+                                .FirstOrDefault(i => i.ServiceOrderItemID == updatedItem.ServiceOrderItemID);
+                            if (existingItem != null)
+                            {
+                                existingItem.Status = updatedItem.Status;
+                            }
+                        }
+                    }
+
+                    // Find and notify the corresponding GroupedServiceOrder
+                    var groupedOrder = groupedServiceOrders.FirstOrDefault(g => g.ServiceOrderID == updatedOrder.ServiceOrderID);
+                    if (groupedOrder != null)
+                    {
+                        // Trigger property changed notifications for calculated properties
+                        groupedOrder.OnPropertyChanged(nameof(GroupedServiceOrder.Status));
+                        groupedOrder.OnPropertyChanged(nameof(GroupedServiceOrder.TotalPrice));
+                        groupedOrder.OnPropertyChanged(nameof(GroupedServiceOrder.ServicesDisplay));
+                    }
                 }
 
-                // 3. Refresh the display
+                // 3. Refresh the display (this rebuilds the entire collection, but the above notifications help with immediate updates)
                 RefreshGroupedOrders();
             }
             catch (Exception ex)
@@ -840,11 +873,24 @@ namespace gentech_services.ViewsModels
             PhoneError = string.Empty;
             ServiceError = string.Empty;
             DateError = string.Empty;
+            
 
-            if (string.IsNullOrWhiteSpace(CustomerName))
+            
+            if (string.IsNullOrWhiteSpace(customerName))
             {
-                CustomerNameError = "Customer name is required";
+                CustomerNameError = "Name is required";
                 isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerName,
+                @"^[A-Za-z]+(\s[A-Za-z]+)*$"))
+            {
+                CustomerNameError = "Name should be all letters";
+                isValid = false;
+            }
+            else
+            {
+                CustomerNameError = string.Empty;
+               
             }
 
             if (string.IsNullOrWhiteSpace(Email))
@@ -852,18 +898,21 @@ namespace gentech_services.ViewsModels
                 EmailError = "Email is required";
                 isValid = false;
             }
-            else if (!IsValidEmail(Email))
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(Email,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             {
                 EmailError = "Invalid email format";
                 isValid = false;
             }
+            
 
             if (string.IsNullOrWhiteSpace(Phone))
             {
                 PhoneError = "Phone number is required";
                 isValid = false;
             }
-            else if (!IsValidPhone(Phone))
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(Phone,
+                 @"^(?:\+63|63|0)?(?:9\d{9}|(?:2|[3-8]\d)\d{7}|\d{7,8})$"))
             {
                 PhoneError = "Invalid phone number format";
                 isValid = false;

@@ -4,11 +4,16 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using gentech_services.MVVM;
+using gentech_services.Services;
+using gentech_services.Models;
 
 namespace gentech_services.ViewsModels
 {
     internal class ProductOrdersViewModel : ViewModelBase
     {
+        private readonly ProductService _productService;
+        private readonly ProductOrderService _productOrderService;
+
         private ObservableCollection<ProductCardViewModel> allProducts;
         private ObservableCollection<ProductCardViewModel> filteredProducts;
         private ObservableCollection<CartItemViewModel> cartItems;
@@ -73,9 +78,7 @@ namespace gentech_services.ViewsModels
             set
             {
                 customerName = value;
-                OnPropertyChanged(nameof(CustomerName));
-                ValidateName();
-                ProcessPaymentCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged();
             }
         }
 
@@ -85,9 +88,7 @@ namespace gentech_services.ViewsModels
             set
             {
                 customerEmail = value;
-                OnPropertyChanged(nameof(CustomerEmail));
-                ValidateEmail();
-                ProcessPaymentCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged();
             }
         }
 
@@ -97,11 +98,45 @@ namespace gentech_services.ViewsModels
             set
             {
                 customerPhone = value;
-                OnPropertyChanged(nameof(CustomerPhone));
-                ValidatePhone();
-                ProcessPaymentCommand.RaiseCanExecuteChanged();
+                OnPropertyChanged();
             }
         }
+
+        //public string CustomerName
+        //{
+        //    get { return customerName; }
+        //    set
+        //    {
+        //        customerName = value;
+        //        OnPropertyChanged(nameof(CustomerName));
+        //        ValidateName();
+        //        ProcessPaymentCommand.RaiseCanExecuteChanged();
+        //    }
+        //}
+
+        //public string CustomerEmail
+        //{
+        //    get { return customerEmail; }
+        //    set
+        //    {
+        //        customerEmail = value;
+        //        OnPropertyChanged(nameof(CustomerEmail));
+        //        ValidateEmail();
+        //        ProcessPaymentCommand.RaiseCanExecuteChanged();
+        //    }
+        //}
+
+        //public string CustomerPhone
+        //{
+        //    get { return customerPhone; }
+        //    set
+        //    {
+        //        customerPhone = value;
+        //        OnPropertyChanged(nameof(CustomerPhone));
+        //        ValidatePhone();
+        //        ProcessPaymentCommand.RaiseCanExecuteChanged();
+        //    }
+        //}
 
         public string NameError
         {
@@ -161,8 +196,11 @@ namespace gentech_services.ViewsModels
         public RelayCommand ProcessPaymentCommand { get; private set; }
         public RelayCommand ClearCartCommand { get; private set; }
 
-        public ProductOrdersViewModel()
+        public ProductOrdersViewModel(ProductService productService, ProductOrderService productOrderService)
         {
+            _productService = productService;
+            _productOrderService = productOrderService;
+
             AddToCartCommand = new RelayCommand(obj => AddToCart(obj as ProductCardViewModel));
             RemoveFromCartCommand = new RelayCommand(obj => RemoveFromCart(obj as CartItemViewModel));
             IncreaseQuantityCommand = new RelayCommand(obj => IncreaseQuantity(obj as CartItemViewModel));
@@ -174,10 +212,38 @@ namespace gentech_services.ViewsModels
             cartItemCounter = 0;
             IsCartEmpty = true;
 
-            LoadProducts();
+            _ = LoadProductsFromDatabase();
         }
 
-        private void LoadProducts()
+        private async System.Threading.Tasks.Task LoadProductsFromDatabase()
+        {
+            try
+            {
+                var products = await _productService.GetActiveProductsAsync();
+                allProducts = new ObservableCollection<ProductCardViewModel>(
+                    products.Select(p => new ProductCardViewModel
+                    {
+                        ProductID = p.ProductID,
+                        Name = p.Name,
+                        CategoryName = p.Category?.Name ?? "Uncategorized",
+                        Price = p.Price,
+                        StockQuanity = p.StockQuantity,
+                        StockStatus = p.StockQuantity == 0 ? "Out of stock" :
+                                     p.StockQuantity <= p.LowStockLevel ? "Low stock" : "In stock"
+                    })
+                );
+
+                FilteredProducts = new ObservableCollection<ProductCardViewModel>(allProducts);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to load products: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                allProducts = new ObservableCollection<ProductCardViewModel>();
+                FilteredProducts = new ObservableCollection<ProductCardViewModel>();
+            }
+        }
+
+        private void LoadProductsFallback()
         {
             allProducts = new ObservableCollection<ProductCardViewModel>
             {
@@ -428,10 +494,7 @@ namespace gentech_services.ViewsModels
             return cartItems.Count > 0 &&
                    !string.IsNullOrWhiteSpace(customerName) &&
                    !string.IsNullOrWhiteSpace(customerEmail) &&
-                   !string.IsNullOrWhiteSpace(customerPhone) &&
-                   string.IsNullOrEmpty(nameError) &&
-                   string.IsNullOrEmpty(emailError) &&
-                   string.IsNullOrEmpty(phoneError);
+                   !string.IsNullOrWhiteSpace(customerPhone);
         }
 
         private void ValidateName()
@@ -443,6 +506,11 @@ namespace gentech_services.ViewsModels
             else if (customerName.Length < 2)
             {
                 NameError = "Name must be at least 2 characters";
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerName,
+                @"^[A-Za-z]"))
+            {
+                EmailError = "Name should be all letters";
             }
             else
             {
@@ -478,18 +546,87 @@ namespace gentech_services.ViewsModels
             {
                 PhoneError = "Invalid phone number format";
             }
-            else if (customerPhone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "").Replace("+", "").Length < 10)
-            {
-                PhoneError = "Phone number must be at least 10 digits";
-            }
+            //else if (customerPhone.Replace(" ", "").Replace("-", "").Replace("(", "").Replace(")", "").Replace("+", "").Length < 10)
+            //{
+            //    PhoneError = "Phone number must be at least 10 digits";
+            //}
             else
             {
                 PhoneError = string.Empty;
             }
         }
 
-        private void ProcessPayment()
+        private bool ValidateForm()
         {
+            bool isValid = true;
+
+            NameError = string.Empty;
+            EmailError = string.Empty;
+            PhoneError = string.Empty;
+
+
+            if (string.IsNullOrWhiteSpace(customerName))
+            {
+                NameError = "Name is required";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerName,
+                @"^[A-Za-z]+(\s[A-Za-z]+)*$"))
+            {
+                NameError = "Name should be all letters";
+                isValid = false;
+            }
+            else
+            {
+                NameError = string.Empty;
+                
+            }
+
+            if (string.IsNullOrWhiteSpace(customerEmail))
+            {
+                EmailError = "Email is required";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerEmail,
+                @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            {
+                EmailError = "Invalid email format";
+                isValid = false;
+            }
+            else
+            {
+                EmailError = string.Empty;
+
+            }
+
+
+            if (string.IsNullOrWhiteSpace(CustomerPhone))
+            {
+                PhoneError = "Phone number is required";
+                isValid = false;
+            }
+            else if (!System.Text.RegularExpressions.Regex.IsMatch(customerPhone,
+                 @"^(?:\+63|63|0)?(?:9\d{9}|(?:2|[3-8]\d)\d{7}|\d{7,8})$"))
+            {
+                PhoneError = "Invalid phone number format";
+                isValid = false;
+            }
+            else
+            {
+                PhoneError = string.Empty;
+
+            }
+
+            return isValid;
+        }
+ 
+
+        private async void ProcessPayment()
+        {
+            if (!ValidateForm())
+            {
+                return;
+            }
             decimal total = cartItems.Sum(item => item.Subtotal);
             int itemCount = cartItems.Sum(item => item.Quantity);
 
@@ -505,15 +642,44 @@ namespace gentech_services.ViewsModels
 
             if (result == MessageBoxResult.Yes)
             {
-                MessageBox.Show(
-                    $"Payment processed successfully!\n\n" +
-                    $"Order ID: ORD-{DateTime.Now:yyyyMMddHHmmss}\n" +
-                    $"Total: ₱{total:N2}",
-                    "Success",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                try
+                {
+                    // Prepare order items
+                    var orderItems = cartItems.Select(ci => (
+                        ProductID: ci.ProductID,
+                        Quantity: ci.Quantity,
+                        UnitPrice: ci.UnitPrice
+                    )).ToList();
 
-                ClearCart();
+                    // Create product order in database
+                    var createdOrder = await _productOrderService.CreateProductOrderAsync(
+                        fullName: CustomerName.Trim(),
+                        email: CustomerEmail.Trim(),
+                        phone: CustomerPhone.Trim(),
+                        orderItems: orderItems
+                    );
+
+                    MessageBox.Show(
+                        $"Payment processed successfully!\n\n" +
+                        $"Order ID: PO-{createdOrder.ProductOrderID:0000}\n" +
+                        $"Total: ₱{total:N2}",
+                        "Success",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    // Refresh products to update stock quantities
+                    await LoadProductsFromDatabase();
+
+                    ClearCart();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(
+                        $"Failed to process payment: {ex.Message}",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
             }
         }
 

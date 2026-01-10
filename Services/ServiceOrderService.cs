@@ -41,7 +41,10 @@ namespace gentech_services.Services
             existingOrder.Status = serviceOrder.Status;
             existingOrder.DeviceDescription = serviceOrder.DeviceDescription;
             existingOrder.IssueNotes = serviceOrder.IssueNotes;
-            existingOrder.Technician = serviceOrder.Technician; // Assuming ServiceOrder has a Technician property
+
+            // Update TechnicianID - the Technician navigation property will be loaded automatically
+            existingOrder.TechnicianID = serviceOrder.TechnicianID ?? serviceOrder.Technician?.UserID;
+
 
             // Update ServiceOrderItems statuses if they exist
             if (serviceOrder.ServiceOrderItems != null && existingOrder.ServiceOrderItems != null)
@@ -194,6 +197,52 @@ namespace gentech_services.Services
                 throw new InvalidOperationException($"Service order with ID {serviceOrderId} not found.");
 
             await _serviceOrderRepository.DeleteAsync(serviceOrder);
+        }
+
+        public async Task<ServiceOrderItem> AddServiceItemToOrderAsync(int serviceOrderId, int serviceId, int quantity = 1)
+        {
+            // Validate service order exists
+            var serviceOrder = await _serviceOrderRepository.GetByIdAsync(serviceOrderId);
+            if (serviceOrder == null)
+                throw new InvalidOperationException($"Service order with ID {serviceOrderId} not found.");
+
+            // Validate service exists
+            var service = await _serviceRepository.GetByIdAsync(serviceId);
+            if (service == null)
+                throw new InvalidOperationException($"Service with ID {serviceId} not found.");
+
+            // Check if service is already in the order
+            if (serviceOrder.ServiceOrderItems != null &&
+                serviceOrder.ServiceOrderItems.Any(item => item.ServiceID == serviceId))
+            {
+                throw new InvalidOperationException($"Service '{service.Name}' is already in this order.");
+            }
+
+            // Create new service order item
+            var newItem = new ServiceOrderItem
+            {
+                ServiceOrderID = serviceOrderId,
+                ServiceID = serviceId,
+                Quantity = quantity,
+                UnitPrice = service.Price,
+                TotalPrice = service.Price * quantity,
+                Status = "Pending"
+            };
+
+            // Add to the service order's collection
+            if (serviceOrder.ServiceOrderItems == null)
+            {
+                serviceOrder.ServiceOrderItems = new List<ServiceOrderItem>();
+            }
+            serviceOrder.ServiceOrderItems.Add(newItem);
+
+            // Save changes to database
+            await _serviceOrderRepository.UpdateAsync(serviceOrder);
+
+            // Load the service navigation property for the new item
+            newItem.Service = service;
+
+            return newItem;
         }
     }
 }

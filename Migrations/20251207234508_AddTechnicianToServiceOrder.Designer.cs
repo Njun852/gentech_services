@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using gentech_services.Data;
 
@@ -10,9 +11,11 @@ using gentech_services.Data;
 namespace gentech_services.Migrations
 {
     [DbContext(typeof(GentechDbContext))]
-    partial class GentechDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251207234508_AddTechnicianToServiceOrder")]
+    partial class AddTechnicianToServiceOrder
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
@@ -124,7 +127,8 @@ namespace gentech_services.Migrations
 
                     b.HasIndex("CategoryID");
 
-                    b.HasIndex("SKU");
+                    b.HasIndex("SKU")
+                        .IsUnique();
 
                     b.ToTable("Products");
                 });
@@ -277,12 +281,7 @@ namespace gentech_services.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("TechnicianID")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("ServiceOrderID");
-
-                    b.HasIndex("TechnicianID");
 
                     b.ToTable("ServiceOrders");
                 });
@@ -422,16 +421,6 @@ namespace gentech_services.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
-                });
-
-            modelBuilder.Entity("gentech_services.Models.ServiceOrder", b =>
-                {
-                    b.HasOne("gentech_services.Models.User", "Technician")
-                        .WithMany()
-                        .HasForeignKey("TechnicianID")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Technician");
                 });
 
             modelBuilder.Entity("gentech_services.Models.ServiceOrderItem", b =>
